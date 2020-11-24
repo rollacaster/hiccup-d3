@@ -1,0 +1,8 @@
+* hiccup-d3
+** Goals
+- Ready-made Copy/Paste CLJS examples of classic d3 charts as starting point
+- Spec data to create unlimited examples and find edge cases
+** Rationale
+- Wrapping APIs is tedious work
+- d3's API is hard to wrap
+- Converting d3 code to CLJS is hard
