@@ -6,6 +6,7 @@
     "shadow-cljs": "2.11.7"
   },
   "dependencies": {
+    "d3": "^6.2.0",
     "react": "16.13.0",
     "react-dom": "16.13.0"
   }
