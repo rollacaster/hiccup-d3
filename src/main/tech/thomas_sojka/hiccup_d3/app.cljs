@@ -2,7 +2,8 @@
   (:require ["d3" :as d3]
             [cljs.pprint :refer [pprint]]
             [reagent.core :as r]
-            [reagent.dom :as dom]))
+            [reagent.dom :as dom]
+            ["clipboard" :as clipboard]))
 (def bar
   {:title "Bar Chart"
    :data (r/atom [])
@@ -69,33 +70,47 @@
             (str letter)]])
         data)])})
 
+(def code (:code bar))
 (defn chart-container []
+  (new clipboard "#copy-code-button")
   (let [active-tab (r/atom :chart)]
     (fn [{:keys [title chart code data]}]
-      [:div.shadow-lg.border.rounded-xl {:class "w-1/2"}
-       [:div.p-14.border-b
-        [:h3.text-3xl.mb-7.font-semibold.tracking-wide
-         title]
-        [:div.overflow-auto {:style {:height 502}}
-         [:div
-          {:class (r/class-names (when-not (= @active-tab :chart) "hidden"))}
-          [chart @data]]
-         [:pre
-          {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
-          (with-out-str (pprint code))]
-         [:pre
-          {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
-          (with-out-str (pprint @data))]]]
-       [:div.flex.divide-x
-        [:button.p-6.hover:bg-gray-100
-         {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
-         "Chart"]
-        [:button.p-6.hover:bg-gray-100
-         {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
-         "Code"]
-        [:button.p-6.hover:bg-gray-100
-         {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
-         "Data"]]])))
+      (let [height (- 502 42)]
+        [:div.shadow-lg.border.rounded-xl {:class "w-1/2"}
+         [:div.p-14.border-b
+          [:h3.text-3xl.mb-7.font-semibold.tracking-wide
+           title]
+          [:div
+           [:div
+            {:class (r/class-names (when-not (= @active-tab :chart) "hidden"))}
+            [chart @data]]
+           [:div
+            {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
+            [:pre#code.overflow-auto.mb-4
+             {:style {:height height}}
+             (with-out-str (pprint code))]
+            [:div.flex.justify-center
+             [:button#copy-code-button.font-bold.border.px-3
+              {:data-clipboard-target "#code"}
+              "copy"]]]
+           [:div
+            {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
+            [:pre#data.overflow-auto.mb-4 {:style {:height height}}
+             (with-out-str (pprint @data))]
+            [:div.flex.justify-center
+             [:button#copy-code-button.font-bold.border.px-3
+              {:data-clipboard-target "#data"}
+              "copy"]]]]]
+         [:div.flex.divide-x
+          [:button.p-6.hover:bg-gray-100
+           {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
+           "Chart"]
+          [:button.p-6.hover:bg-gray-100
+           {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
+           "Code"]
+          [:button.p-6.hover:bg-gray-100
+           {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
+           "Data"]]]))))
 
 (defn app []
   (-> (js/fetch "data/frequencies.json")
