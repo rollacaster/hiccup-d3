@@ -69,14 +69,33 @@
             (str letter)]])
         data)])})
 
-(defn chart-container [{:keys [title chart code data]}]
-  [:div {:class "w-1/2"}
-   [:h3.text-lg.font-bold.mb-2 title]
-   [:div.mb-2 [chart @data]]
-   [:pre.overflow-scroll.mb-2
-    (with-out-str (pprint code))]
-   [:pre.overflow-scroll
-    (with-out-str (pprint @data))]])
+(defn chart-container []
+  (let [active-tab (r/atom :chart)]
+    (fn [{:keys [title chart code data]}]
+      [:div.shadow-lg.border.rounded-xl {:class "w-1/2"}
+       [:div.p-14.border-b
+        [:h3.text-3xl.mb-7.font-semibold.tracking-wide
+         title]
+        [:div.overflow-auto {:style {:height 502}}
+         [:div
+          {:class (r/class-names (when-not (= @active-tab :chart) "hidden"))}
+          [chart @data]]
+         [:pre
+          {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
+          (with-out-str (pprint code))]
+         [:pre
+          {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
+          (with-out-str (pprint @data))]]]
+       [:div.flex.divide-x
+        [:button.p-6.hover:bg-gray-100
+         {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
+         "Chart"]
+        [:button.p-6.hover:bg-gray-100
+         {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
+         "Code"]
+        [:button.p-6.hover:bg-gray-100
+         {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
+         "Data"]]])))
 
 (defn app []
   (-> (js/fetch "data/frequencies.json")
@@ -84,10 +103,10 @@
       (.then (fn [res] (reset! (:data bar) (js->clj res :keywordize-keys true))))
       (.catch (fn [res] (prn res))))
   (fn []
-    [:div
-     [:header.border-b
+    [:div.text-gray-900
+     [:header.border-b.bg-gray-800
       [:div.px-6.py-4.max-w-7xl.mx-auto
-       [:h1.text-xl.font-bold "hiccup-d3"]]]
+       [:h1.text-2xl.font-bold.text-white "hiccup-d3"]]]
      [:div.max-w-7xl.mx-auto.p-6
       [chart-container bar]]]))
 
