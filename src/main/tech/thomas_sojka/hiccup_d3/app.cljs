@@ -77,7 +77,7 @@
   (let [active-tab (r/atom :chart)]
     (fn [{:keys [title chart code data]}]
       (let [height (- 502 42)]
-        [:div.shadow-lg.border.rounded-xl {:class "w-1/2"}
+        [:div.shadow-lg.border.rounded-xl.bg-white {:class "w-1/2"}
          [:div.p-14.border-b
           [:h3.text-3xl.mb-7.font-semibold.tracking-wide
            title]
@@ -120,9 +120,20 @@
       (.catch (fn [res] (prn res))))
   (fn []
     [:div.text-gray-900
-     [:header.border-b.bg-gray-800
+     [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
       [:div.px-6.py-4.max-w-7xl.mx-auto
-       [:h1.text-2xl.font-bold.text-white "hiccup-d3"]]]
+       [:h1.text-xl.font-bold.text-white
+        [:a {:href "https://rollacaster.github.io/hiccup-d3/"} "hiccup-d3"]]
+       [:div.text-white.py-12.flex
+        [:div.text-4xl {:class "w-1/2"}
+         [:div.max-w-md
+          "Ready-made ClojureScript examples for D3"]]
+        [:div.text-lg {:class "w-1/2"}
+         [:div.max-w-md
+          "Transforming D3 code to ClojureScript is complex. Use these starting points to create a new chart with "
+          [:a.underline {:href "https://github.com/weavejester/hiccup"} "hiccup"]
+          ". No functionality was wrapped access the full "
+          [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
      [:div.max-w-7xl.mx-auto.p-6
       [chart-container bar]]]))
 
