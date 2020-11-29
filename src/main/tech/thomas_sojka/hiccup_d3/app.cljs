@@ -119,7 +119,7 @@
       (.then (fn [res] (reset! (:data bar) (js->clj res :keywordize-keys true))))
       (.catch (fn [res] (prn res))))
   (fn []
-    [:div.text-gray-900
+    [:div.text-gray-900.flex.flex-col.h-screen
      [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
       [:div.px-6.py-4.max-w-7xl.mx-auto
        [:h1.text-xl.font-bold.text-white
@@ -134,8 +134,11 @@
           [:a.underline {:href "https://github.com/weavejester/hiccup"} "hiccup"]
           ". No functionality was wrapped access the full "
           [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
-     [:div.max-w-7xl.mx-auto.p-6
-      [chart-container bar]]]))
+     [:div.flex-1
+      [:div.max-w-7xl.mx-auto.p-6
+       [chart-container bar]]]
+     [:footer.bg-gray-800.flex.justify-center.py-2
+      [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
 
 (dom/render [app] (js/document.getElementById "root"))
 
