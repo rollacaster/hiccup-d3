@@ -16,5 +16,8 @@
    :build-hooks
    [(shadow.html/copy-file
      "resources/index.html"
-     "public/index.html")]
+     "public/index.html")
+    (tech.thomas-sojka.shadow-tailwind.dev-hook/build-dev-css
+     "resources/styles.css"
+     "public/css/styles.css")]
    :modules {:main {:init-fn tech.thomas-sojka.hiccup-d3.app/init}}}}}
