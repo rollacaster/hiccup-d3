@@ -11,5 +11,10 @@
  :builds
  {:frontend
   {:target :browser
-   :modules {:main {:init-fn tech.thomas-sojka.hiccup-d3.app/init}}
-   }}}
+   :module-hash-names true
+   :asset-path "js"
+   :build-hooks
+   [(shadow.html/copy-file
+     "resources/index.html"
+     "public/index.html")]
+   :modules {:main {:init-fn tech.thomas-sojka.hiccup-d3.app/init}}}}}
