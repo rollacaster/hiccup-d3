@@ -79,13 +79,65 @@
               (str letter)]])
           data)]))})
 
+(def pie
+  {:title "Pie Chart"
+   :data (r/atom [])
+   :chart (fn [data]
+            (let [size 300
+                  pie (-> (d3/pie)
+                          (.sort nil)
+                          (.value (fn [d] (:value d))))
+                  arc (-> (d3/arc)
+                          (.innerRadius 0)
+                          (.outerRadius (/ size 2)))
+                  arc-label (let [r (* (/ size 2) 0.8)]
+                              (-> (d3/arc)
+                                  (.innerRadius r)
+                                  (.outerRadius r)))
+                  color (d3/scaleOrdinal d3/schemeCategory10)
+                  arcs (pie data)]
+              [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+               (map-indexed
+                (fn [idx pie-arc]
+                  [:g {:key idx}
+                   [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
+                   (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
+                     [:text.text-xs
+                      {:transform (str "translate("(.centroid arc-label pie-arc) ")") :text-anchor "middle"}
+                      (:name (.-data pie-arc))])])
+                arcs)]))
+   :code
+   '(let [size 300
+                  pie (-> (d3/pie)
+                          (.sort nil)
+                          (.value (fn [d] (:value d))))
+                  arc (-> (d3/arc)
+                          (.innerRadius 0)
+                          (.outerRadius (/ size 2)))
+                  arc-label (let [r (* (/ size 2) 0.8)]
+                              (-> (d3/arc)
+                                  (.innerRadius r)
+                                  (.outerRadius r)))
+                  color (d3/scaleOrdinal d3/schemeCategory10)
+                  arcs (pie data)]
+              [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+               (map-indexed
+                (fn [idx pie-arc]
+                  [:g {:key idx}
+                   [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
+                   (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
+                     [:text.text-xs
+                      {:transform (str "translate("(.centroid arc-label pie-arc) ")") :text-anchor "middle"}
+                      (:name (.-data pie-arc))])])
+                arcs)])})
+
 (def code (:code bar))
 (defn chart-container []
   (new clipboard "#copy-code-button")
   (let [active-tab (r/atom :chart)]
     (fn [{:keys [title chart code data]}]
-      (let [height (- 502 42)]
-        [:div.shadow-lg.border.md:rounded-xl.bg-white {:class "md:w-1/2"}
+      (let [height (- 399 42)]
+        [:div.shadow-lg.border.md:rounded-xl.bg-white {:class "md:w-5/12"}
          [:div.p-6.md:p-14.border-b
           [:h3.text-3xl.mb-7.font-semibold.tracking-wide
            title]
@@ -136,7 +188,11 @@
       (.then (fn [res] (.json res)))
       (.then (fn [res] (reset! (:data bar) (js->clj res :keywordize-keys true))))
       (.catch (fn [res] (prn res))))
-  (fn []
+  (-> (js/fetch "data/population-by-age.json")
+      (.then (fn [res] (.json res)))
+      (.then (fn [res] (reset! (:data pie) (js->clj res :keywordize-keys true))))
+      (.catch (fn [res] (prn res))))
+    (fn []
     [:div.text-gray-900.flex.flex-col.h-screen
      [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
       [:div.px-6.py-4.max-w-7xl.mx-auto
@@ -153,7 +209,8 @@
           ". No functionality was wrapped, access the full "
           [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
      [:div.flex-1
-      [:div.max-w-7xl.mx-auto.py-2.md:p-6
+      [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.justify-between
+       [chart-container pie]
        [chart-container bar]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
       [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
