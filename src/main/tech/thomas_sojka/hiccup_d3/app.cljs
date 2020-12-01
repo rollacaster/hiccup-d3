@@ -137,7 +137,7 @@
   (let [active-tab (r/atom :chart)]
     (fn [{:keys [title chart code data]}]
       (let [height (- 399 42)]
-        [:div.shadow-lg.border.md:rounded-xl.bg-white {:class "md:w-5/12"}
+        [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2 {:class "md:w-5/12"}
          [:div.p-6.md:p-14.border-b
           [:h3.text-3xl.mb-7.font-semibold.tracking-wide
            title]
@@ -167,17 +167,17 @@
                [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
                "copy"]]]]]]
          [:div.flex.divide-x
-          [:button.p-6.hover:bg-gray-100
+          [:button.p-5.md:p-6.hover:bg-gray-100
            {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
            [:div.flex.items-center.justify-center
             [:div.w-4.h-4.mr-1 [icon {:name :chart :class "text-gray-600"}]]
             "Chart"]]
-          [:button.p-6.hover:bg-gray-100
+          [:button.p-5.md:p-6.hover:bg-gray-100
            {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
            [:div.flex.items-center.justify-center
             [:div.w-4.h-4.mr-1 [icon {:name :code :class "text-gray-600"}]]
             "Code"]]
-          [:button.p-6.hover:bg-gray-100
+          [:button.p-5.md:p-6.hover:bg-gray-100
            {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
            [:div.flex.items-center.justify-center
             [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
@@ -209,7 +209,7 @@
           ". No functionality was wrapped, access the full "
           [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
      [:div.flex-1
-      [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.justify-between
+      [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.justify-between.flex-wrap
        [chart-container pie]
        [chart-container bar]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
