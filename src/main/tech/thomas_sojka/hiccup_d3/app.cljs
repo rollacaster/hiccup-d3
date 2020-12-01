@@ -16,8 +16,8 @@
   {:title "Bar Chart"
    :data (r/atom [])
    :chart (fn [data]
-            (let [size 300
-                  margin {:top 0 :right 0 :left 13 :bottom 0}
+            (let [size 400
+                  margin {:top 0 :right 0 :left 16 :bottom 0}
                   x (-> (d3/scaleLinear)
                         (.range (clj->js [(:left margin) (- size (:right margin))]))
                         (.domain (clj->js [0 (apply max (map :frequency data))])))
@@ -38,17 +38,16 @@
                (map-indexed
                 (fn [idx {:keys [letter frequency]}]
                   [:g {:key idx :transform (str "translate("0 "," (y idx) ")")}
-                   [:text {:style {:font-size 8}
-                           :x 17
-                           :y (/ (.bandwidth y) 2)
+                   [:text {:x 20
+                           :y (+ (/ (.bandwidth y) 2) 1)
                            :dominant-baseline "middle"} (str frequency)]
                    [:text.current-fill
-                    {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle" :style {:font-size 10}}
+                    {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle"}
                     (str letter)]])
                 data)]))
    :code
    '(fn [data]
-      (let [size 300
+      (let [size 400
             margin {:top 0 :right 0 :left 13 :bottom 0}
             x (-> (d3/scaleLinear)
                   (.range (clj->js [(:left margin) (- size (:right margin))]))
@@ -101,9 +100,10 @@
                 (fn [idx pie-arc]
                   [:g {:key idx}
                    [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
-                   (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
-                     [:text.text-xs
-                      {:transform (str "translate("(.centroid arc-label pie-arc) ")") :text-anchor "middle"}
+                   (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.3)
+                     [:text
+                      {:transform (str "translate("(.centroid arc-label pie-arc) ")") :text-anchor "middle"
+                       :dominant-baseline "middle"}
                       (:name (.-data pie-arc))])])
                 arcs)]))
    :code
@@ -139,7 +139,7 @@
       (let [height (- 399 42)]
         [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2 {:class "md:w-5/12"}
          [:div.p-6.md:p-14.border-b
-          [:h3.text-3xl.mb-7.font-semibold.tracking-wide
+          [:h2.text-3xl.mb-7.font-semibold.tracking-wide
            title]
           [:div
            [:div
