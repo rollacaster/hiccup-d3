@@ -1,6 +1,7 @@
 (ns tech.thomas-sojka.hiccup-d3.app
   (:require ["d3" :as d3]
             [cljs.pprint :refer [pprint]]
+            [clojure.string :as str]
             [reagent.core :as r]
             [reagent.dom :as dom]
             ["clipboard" :as clipboard]))
@@ -131,6 +132,54 @@
                       (:name (.-data pie-arc))])])
                 arcs)])})
 
+(def line
+  {:title "Line Chart"
+   :data (r/atom [])
+   :chart (fn [data]
+            (let [size 300
+                  margin {:top 0 :right 0 :left 16 :bottom 0}
+                  dates (map :date data)
+                  values (map :close data)
+                  x (-> (d3/scaleUtc)
+                        (.domain (clj->js [(apply min dates) (apply max dates)]))
+                        (.range (clj->js [(:left margin) (- size (:right margin))])))
+                  y (-> (d3/scaleLinear)
+                        (.domain (clj->js [0 (apply max values)]))
+                        (.range (clj->js [(- size (:bottom margin)) (:top margin)])))
+                  color (d3/scaleOrdinal d3/schemeCategory10)
+                  line (-> (d3/line)
+                           (.defined (fn [d] (number? (:close d))))
+                           (.x (fn [d] (x (:date d))))
+                           (.y (fn [d] (y (:close d)))))]
+              [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+               [:path {:d (line data)
+                       :fill "transparent"
+                       :stroke (color 0)}]]))
+   :code
+   '(let [size 300
+                  pie (-> (d3/pie)
+                          (.sort nil)
+                          (.value (fn [d] (:value d))))
+                  arc (-> (d3/arc)
+                          (.innerRadius 0)
+                          (.outerRadius (/ size 2)))
+                  arc-label (let [r (* (/ size 2) 0.8)]
+                              (-> (d3/arc)
+                                  (.innerRadius r)
+                                  (.outerRadius r)))
+                  color (d3/scaleOrdinal d3/schemeCategory10)
+                  arcs (pie data)]
+              [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+               (map-indexed
+                (fn [idx pie-arc]
+                  [:g {:key idx}
+                   [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
+                   (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
+                     [:text.text-xs
+                      {:transform (str "translate("(.centroid arc-label pie-arc) ")") :text-anchor "middle"}
+                      (:name (.-data pie-arc))])])
+                arcs)])})
+
 (def code (:code bar))
 (defn chart-container []
   (new clipboard "#copy-code-button")
@@ -182,7 +231,18 @@
            [:div.flex.items-center.justify-center
             [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
             "Data"]]]]))))
+(defn csv->clj [csv]
+  (let [[header-line & content-lines] (str/split-lines csv)
+        headers (map keyword (str/split header-line ","))]
+    (map
+     (fn [line]
+       (zipmap headers (str/split line ",")))
+     content-lines)))
 
+(defn parse-stock-data [stock-data]
+  (-> stock-data
+      (update :date #(new js/Date %))
+      (update :close js/parseFloat)))
 (defn app []
   (-> (js/fetch "data/frequencies.json")
       (.then (fn [res] (.json res)))
@@ -191,6 +251,10 @@
   (-> (js/fetch "data/population-by-age.json")
       (.then (fn [res] (.json res)))
       (.then (fn [res] (reset! (:data pie) (js->clj res :keywordize-keys true))))
+      (.catch (fn [res] (prn res))))
+  (-> (js/fetch "data/apple-stock.csv")
+      (.then (fn [res] (.text res)))
+      (.then (fn [res] (reset! (:data line) ((comp #(map parse-stock-data %) csv->clj) res))))
       (.catch (fn [res] (prn res))))
     (fn []
     [:div.text-gray-900.flex.flex-col.h-screen
@@ -210,8 +274,9 @@
           [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
      [:div.flex-1
       [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.justify-between.flex-wrap
+       [chart-container bar]
        [chart-container pie]
-       [chart-container bar]]]
+       [chart-container line]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
       [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
 
