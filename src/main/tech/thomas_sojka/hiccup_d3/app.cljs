@@ -4,6 +4,14 @@
             [reagent.core :as r]
             [reagent.dom :as dom]
             ["clipboard" :as clipboard]))
+
+(defn icon [{:keys [name class]}]
+  [:svg.fill-current {:viewBox "0 0 24 24" :class class}
+   [:path {:d (case name
+                :chart "M5 19h-4v-4h4v4zm6 0h-4v-8h4v8zm6 0h-4v-13h4v13zm6 0h-4v-19h4v19zm1 2h-24v2h24v-2z"
+                :code "M24 10.935v2.131l-8 3.947v-2.23l5.64-2.783-5.64-2.79v-2.223l8 3.948zm-16 3.848l-5.64-2.783 5.64-2.79v-2.223l-8 3.948v2.131l8 3.947v-2.23zm7.047-10.783h-2.078l-4.011 16h2.073l4.016-16z"
+                :data "M13 6c3.469 0 2 5 2 5s5-1.594 5 2v9h-12v-16h5zm.827-2h-7.827v20h16v-11.842c0-2.392-5.011-8.158-8.173-8.158zm.173-2l-3-2h-9v22h2v-20h10z"
+                :copy "M22 2v22h-20v-22h3c1.23 0 2.181-1.084 3-2h8c.82.916 1.771 2 3 2h3zm-11 1c0 .552.448 1 1 1 .553 0 1-.448 1-1s-.447-1-1-1c-.552 0-1 .448-1 1zm9 1h-4l-2 2h-3.897l-2.103-2h-4v18h16v-18zm-13 9.729l.855-.791c1 .484 1.635.852 2.76 1.654 2.113-2.399 3.511-3.616 6.106-5.231l.279.64c-2.141 1.869-3.709 3.949-5.967 7.999-1.393-1.64-2.322-2.686-4.033-4.271z")}]])
 (def bar
   {:title "Bar Chart"
    :data (r/atom [])
@@ -93,7 +101,9 @@
             [:div.flex.justify-center
              [:button#copy-code-button.font-bold.border.px-3
               {:data-clipboard-target "#code"}
-              "copy"]]]
+              [:div.flex.items-center.justify-center
+               [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+               "copy"]]]]
            [:div
             {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
             [:pre#data.overflow-auto.mb-4 {:style {:height height}}
@@ -101,17 +111,25 @@
             [:div.flex.justify-center
              [:button#copy-code-button.font-bold.border.px-3
               {:data-clipboard-target "#data"}
-              "copy"]]]]]
+              [:div.flex.items-center.justify-center
+               [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+               "copy"]]]]]]
          [:div.flex.divide-x
           [:button.p-6.hover:bg-gray-100
            {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
-           "Chart"]
+           [:div.flex.items-center.justify-center
+            [:div.w-4.h-4.mr-1 [icon {:name :chart :class "text-gray-600"}]]
+            "Chart"]]
           [:button.p-6.hover:bg-gray-100
            {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
-           "Code"]
+           [:div.flex.items-center.justify-center
+            [:div.w-4.h-4.mr-1 [icon {:name :code :class "text-gray-600"}]]
+            "Code"]]
           [:button.p-6.hover:bg-gray-100
            {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
-           "Data"]]]))))
+           [:div.flex.items-center.justify-center
+            [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
+            "Data"]]]]))))
 
 (defn app []
   (-> (js/fetch "data/frequencies.json")
