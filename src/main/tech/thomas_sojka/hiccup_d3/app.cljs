@@ -150,7 +150,7 @@
          [:div.max-w-md
           "Transforming D3 code to ClojureScript is complex. Use these starting points to create a new chart with "
           [:a.underline {:href "https://github.com/weavejester/hiccup"} "hiccup"]
-          ". No functionality was wrapped access the full "
+          ". No functionality was wrapped, access the full "
           [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
      [:div.flex-1
       [:div.max-w-7xl.mx-auto.py-2.md:p-6
