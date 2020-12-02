@@ -182,55 +182,57 @@
 
 (def code (:code bar))
 (defn chart-container []
-  (new clipboard "#copy-code-button")
-  (let [active-tab (r/atom :chart)]
-    (fn [{:keys [title chart code data]}]
-      (let [height (- 399 42)]
-        [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2 {:class "md:w-5/12"}
-         [:div.p-6.md:p-14.border-b
-          [:h2.text-3xl.mb-7.font-semibold.tracking-wide
-           title]
-          [:div
-           [:div
-            {:class (r/class-names (when-not (= @active-tab :chart) "hidden"))}
-            [chart @data]]
-           [:div
-            {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
-            [:pre#code.overflow-auto.mb-4
-             {:style {:height height}}
-             (with-out-str (pprint code))]
-            [:div.flex.justify-center
-             [:button#copy-code-button.font-bold.border.px-3
-              {:data-clipboard-target "#code"}
-              [:div.flex.items-center.justify-center
-               [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
-               "copy"]]]]
-           [:div
-            {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
-            [:pre#data.overflow-auto.mb-4 {:style {:height height}}
-             (with-out-str (pprint @data))]
-            [:div.flex.justify-center
-             [:button#copy-code-button.font-bold.border.px-3
-              {:data-clipboard-target "#data"}
-              [:div.flex.items-center.justify-center
-               [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
-               "copy"]]]]]]
-         [:div.flex.divide-x
-          [:button.p-5.md:p-6.hover:bg-gray-100
-           {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
-           [:div.flex.items-center.justify-center
-            [:div.w-4.h-4.mr-1 [icon {:name :chart :class "text-gray-600"}]]
-            "Chart"]]
-          [:button.p-5.md:p-6.hover:bg-gray-100
-           {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
-           [:div.flex.items-center.justify-center
-            [:div.w-4.h-4.mr-1 [icon {:name :code :class "text-gray-600"}]]
-            "Code"]]
-          [:button.p-5.md:p-6.hover:bg-gray-100
-           {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
-           [:div.flex.items-center.justify-center
-            [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
-            "Data"]]]]))))
+  (let [copy-id (random-uuid)]
+    (new clipboard ".copy-button")
+    (let [active-tab (r/atom :chart)]
+      (fn [{:keys [title chart code data]}]
+        (let [height (- 393.08 42)]
+          [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
+           [:div.p-6.md:p-14.border-b
+            [:h2.text-3xl.mb-7.font-semibold.tracking-wide
+             title]
+            [:div
+             [:div
+              {:class (r/class-names (when-not (= @active-tab :chart) "hidden"))}
+              [chart @data]]
+             [:div
+              {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
+              [:pre.overflow-auto.mb-4
+               {:style {:height height}  :id (str "code" copy-id)}
+               (with-out-str (pprint code))]
+              [:div.flex.justify-center
+               [:button.copy-button.font-bold.border.px-3
+                {:data-clipboard-target (str "#code" copy-id)}
+                [:div.flex.items-center.justify-center
+                 [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+                 "copy"]]]]
+             [:div
+              {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
+              [:pre.overflow-auto.mb-4
+               {:style {:height height} :id (str "data" copy-id)}
+               (with-out-str (pprint @data))]
+              [:div.flex.justify-center
+               [:button.copy-button.font-bold.border.px-3
+                {:data-clipboard-target (str "#data" copy-id)}
+                [:div.flex.items-center.justify-center
+                 [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+                 "copy"]]]]]]
+           [:div.flex.divide-x
+            [:button.p-5.md:p-6.hover:bg-gray-100
+             {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
+             [:div.flex.items-center.justify-center
+              [:div.w-4.h-4.mr-1 [icon {:name :chart :class "text-gray-600"}]]
+              "Chart"]]
+            [:button.p-5.md:p-6.hover:bg-gray-100
+             {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
+             [:div.flex.items-center.justify-center
+              [:div.w-4.h-4.mr-1 [icon {:name :code :class "text-gray-600"}]]
+              "Code"]]
+            [:button.p-5.md:p-6.hover:bg-gray-100
+             {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
+             [:div.flex.items-center.justify-center
+              [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
+              "Data"]]]])))))
 (defn csv->clj [csv]
   (let [[header-line & content-lines] (str/split-lines csv)
         headers (map keyword (str/split header-line ","))]
@@ -273,7 +275,7 @@
           ". No functionality was wrapped, access the full "
           [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
      [:div.flex-1
-      [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.justify-between.flex-wrap
+      [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
        [chart-container bar]
        [chart-container pie]
        [chart-container line]]]
