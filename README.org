@@ -1,8 +1,11 @@
 * [[https://rollacaster.github.io/hiccup-d3/][hiccup-d3]]
 [[https://rollacaster.github.io/hiccup-d3/][hiccup-d3]] provides some ready-made [[https://clojurescript.org/][ClojureScript]] examples of standard [[https://d3js.org/][D3]] charts. You can copy / paste them at https://rollacaster.github.io/hiccup-d3/
+** Usage
+This is not a library. Just copy [[https://rollacaster.github.io/hiccup-d3/][one of the examples]] as a starting point for your chart.
+
+The example code assumes =D3= is already required.
 ** Rationale
 *** Transforming a [[https://observablehq.com/@d3/][D3 example from Observable]] to ClojureScript is complex
-D3 can only process JavaScript data structures but to use the result you need to transform it into Clojure data structures. A common solution is to transform them into [[https://github.com/weavejester/hiccup][hiccup]]. Every time  I start a new chart I repeat this task, to avoid this repetitive work I created [[https://rollacaster.github.io/hiccup-d3/][hiccup-d3]] to have a common starting point for all basic [[https://d3js.org/][D3]] charts.
+[[https://d3js.org/][D3]] can only process =JavaScript= data structures but to use the result you need to transform it into =Clojure= data structures. A common solution is to transform them into [[https://github.com/weavejester/hiccup][hiccup]]. Every time  I start a new chart I repeat this task, to avoid this repetitive work I created [[https://rollacaster.github.io/hiccup-d3/][hiccup-d3]] to have a common starting point for all basic [[https://d3js.org/][D3]] charts.
 *** hiccup-d3 is no wrapper library
-Interop between [[https://clojurescript.org/][ClojureScript]] and JavaScript works well. Therefore, I did not want to create a wrapper which would add additional abstractions. Parts of D3 are written in an idiomatic Clojure style and focus on transforming data. Only those parts are part of [[https://rollacaster.github.io/hiccup-d3/][hiccup-d3]].
-
+Interop between [[https://clojurescript.org/][ClojureScript]] and JavaScript works well. Therefore, I did not want to create a wrapper which would add additional abstractions. Parts of [[https://d3js.org/][D3]] are written in an idiomatic Clojure style and focus on transforming data. Only those parts are part of [[https://rollacaster.github.io/hiccup-d3/][hiccup-d3]]. Maybe I'll try to write a library for the other parts in the future.
