@@ -181,58 +181,63 @@
                 arcs)])})
 
 (def code (:code bar))
+(defn card [children]
+  [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
+   children])
+
 (defn chart-container []
   (let [copy-id (random-uuid)]
     (new clipboard ".copy-button")
     (let [active-tab (r/atom :chart)]
       (fn [{:keys [title chart code data]}]
         (let [height (- 393.08 42)]
-          [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
-           [:div.p-6.md:p-14.border-b
-            [:h2.text-3xl.mb-7.font-semibold.tracking-wide
-             title]
-            [:div
+          [card
+           [:<>
+            [:div.p-6.md:p-14.border-b
+             [:h2.text-3xl.mb-7.font-semibold.tracking-wide
+              title]
              [:div
-              {:class (r/class-names (when-not (= @active-tab :chart) "hidden"))}
-              [chart @data]]
-             [:div
-              {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
-              [:pre.overflow-auto.mb-4
-               {:style {:height height}  :id (str "code" copy-id)}
-               (with-out-str (pprint code))]
-              [:div.flex.justify-center
-               [:button.copy-button.font-bold.border.px-3
-                {:data-clipboard-target (str "#code" copy-id)}
-                [:div.flex.items-center.justify-center
-                 [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
-                 "copy"]]]]
-             [:div
-              {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
-              [:pre.overflow-auto.mb-4
-               {:style {:height height} :id (str "data" copy-id)}
-               (with-out-str (pprint @data))]
-              [:div.flex.justify-center
-               [:button.copy-button.font-bold.border.px-3
-                {:data-clipboard-target (str "#data" copy-id)}
-                [:div.flex.items-center.justify-center
-                 [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
-                 "copy"]]]]]]
-           [:div.flex.divide-x
-            [:button.p-5.md:p-6.hover:bg-gray-100
-             {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
-             [:div.flex.items-center.justify-center
-              [:div.w-4.h-4.mr-1 [icon {:name :chart :class "text-gray-600"}]]
-              "Chart"]]
-            [:button.p-5.md:p-6.hover:bg-gray-100
-             {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
-             [:div.flex.items-center.justify-center
-              [:div.w-4.h-4.mr-1 [icon {:name :code :class "text-gray-600"}]]
-              "Code"]]
-            [:button.p-5.md:p-6.hover:bg-gray-100
-             {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
-             [:div.flex.items-center.justify-center
-              [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
-              "Data"]]]])))))
+              [:div
+               {:class (r/class-names (when-not (= @active-tab :chart) "hidden"))}
+               [chart @data]]
+              [:div
+               {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
+               [:pre.overflow-auto.mb-4
+                {:style {:height height}  :id (str "code" copy-id)}
+                (with-out-str (pprint code))]
+               [:div.flex.justify-center
+                [:button.copy-button.font-bold.border.px-3
+                 {:data-clipboard-target (str "#code" copy-id)}
+                 [:div.flex.items-center.justify-center
+                  [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+                  "copy"]]]]
+              [:div
+               {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
+               [:pre.overflow-auto.mb-4
+                {:style {:height height} :id (str "data" copy-id)}
+                (with-out-str (pprint @data))]
+               [:div.flex.justify-center
+                [:button.copy-button.font-bold.border.px-3
+                 {:data-clipboard-target (str "#data" copy-id)}
+                 [:div.flex.items-center.justify-center
+                  [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+                  "copy"]]]]]]
+            [:div.flex.divide-x
+             [:button.p-5.md:p-6.hover:bg-gray-100
+              {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
+              [:div.flex.items-center.justify-center
+               [:div.w-4.h-4.mr-1 [icon {:name :chart :class "text-gray-600"}]]
+               "Chart"]]
+             [:button.p-5.md:p-6.hover:bg-gray-100
+              {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
+              [:div.flex.items-center.justify-center
+               [:div.w-4.h-4.mr-1 [icon {:name :code :class "text-gray-600"}]]
+               "Code"]]
+             [:button.p-5.md:p-6.hover:bg-gray-100
+              {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
+              [:div.flex.items-center.justify-center
+               [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
+               "Data"]]]]])))))
 (defn csv->clj [csv]
   (let [[header-line & content-lines] (str/split-lines csv)
         headers (map keyword (str/split header-line ","))]
@@ -245,6 +250,25 @@
   (-> stock-data
       (update :date #(new js/Date %))
       (update :close js/parseFloat)))
+
+(defn following-soon []
+  [card
+   [:div.p-6.md:p-14
+    [:h2.text-3xl.mb-7.font-semibold.tracking-wide
+     "Following soon"]
+    [:ul.list-disc.list-inside
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/circle-packing?collection=@d3/d3-hierarchy"} "Circle Packing"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/tidy-tree?collection=@d3/d3-hierarchy"} "Tree"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/world-airports?collection=@d3/d3-geo"} "World Map"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sankey-diagram?collection=@d3/d3-sankey"} "Sankey"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/force-directed-graph?collection=@d3/d3-force"} "Force-Directed Graph"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sunburst?collection=@d3/d3-hierarchy"} "Sunburst"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/stratify-treemap?collection=@d3/d3-hierarchy"} "Treemap"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/chord-diagram?collection=@d3/d3-chord"} "Chord"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/contours?collection=@d3/d3-contour"} "Contours"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/hover-voronoi?collection=@d3/d3-delaunay"} "Voronoi"]]
+     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/streamgraph?collection=@d3/d3-shape"} "Streamgraph"]]]]])
+
 (defn app []
   (-> (js/fetch "data/frequencies.json")
       (.then (fn [res] (.json res)))
@@ -278,7 +302,8 @@
       [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
        [chart-container bar]
        [chart-container pie]
-       [chart-container line]]]
+       [chart-container line]
+       [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
       [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
 
