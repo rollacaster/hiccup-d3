@@ -29,16 +29,15 @@
               [:svg {:viewBox (str "0 0 " size " " size)}
                (map-indexed
                 (fn [idx {:keys [letter frequency]}]
-                  [:g {:key idx :transform (str "translate("0 "," (y idx) ")")}
+                  [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
                    [:rect {:x (x 0)
                            :height (.bandwidth y)
                            :fill (color letter)
-                           :width (x frequency)}]
-                   ])
+                           :width (x frequency)}]])
                 data)
                (map-indexed
                 (fn [idx {:keys [letter frequency]}]
-                  [:g {:key idx :transform (str "translate("0 "," (y idx) ")")}
+                  [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
                    [:text {:x 20
                            :y (+ (/ (.bandwidth y) 2) 1)
                            :dominant-baseline "middle"} (str frequency)]
@@ -60,16 +59,15 @@
         [:svg {:viewBox (str "0 0 " size " " size)}
          (map-indexed
           (fn [idx {:keys [letter frequency]}]
-            [:g {:key idx :transform (str "translate("0 "," (y idx) ")")}
+            [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
              [:rect {:x (x 0)
                      :height (.bandwidth y)
                      :fill (color letter)
-                     :width (x frequency)}]
-             ])
+                     :width (x frequency)}]])
           data)
          (map-indexed
           (fn [idx {:keys [letter frequency]}]
-            [:g {:key idx :transform (str "translate("0 "," (y idx) ")")}
+            [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
              [:text {:style {:font-size 8}
                      :x 17
                      :y (/ (.bandwidth y) 2)
@@ -103,34 +101,34 @@
                    [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
                    (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.3)
                      [:text
-                      {:transform (str "translate("(.centroid arc-label pie-arc) ")") :text-anchor "middle"
+                      {:transform (str "translate(" (.centroid arc-label pie-arc) ")") :text-anchor "middle"
                        :dominant-baseline "middle"}
                       (:name (.-data pie-arc))])])
                 arcs)]))
    :code
    '(let [size 300
-                  pie (-> (d3/pie)
-                          (.sort nil)
-                          (.value (fn [d] (:value d))))
-                  arc (-> (d3/arc)
-                          (.innerRadius 0)
-                          (.outerRadius (/ size 2)))
-                  arc-label (let [r (* (/ size 2) 0.8)]
-                              (-> (d3/arc)
-                                  (.innerRadius r)
-                                  (.outerRadius r)))
-                  color (d3/scaleOrdinal d3/schemeCategory10)
-                  arcs (pie data)]
-              [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
-               (map-indexed
-                (fn [idx pie-arc]
-                  [:g {:key idx}
-                   [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
-                   (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
-                     [:text.text-xs
-                      {:transform (str "translate("(.centroid arc-label pie-arc) ")") :text-anchor "middle"}
-                      (:name (.-data pie-arc))])])
-                arcs)])})
+          pie (-> (d3/pie)
+                  (.sort nil)
+                  (.value (fn [d] (:value d))))
+          arc (-> (d3/arc)
+                  (.innerRadius 0)
+                  (.outerRadius (/ size 2)))
+          arc-label (let [r (* (/ size 2) 0.8)]
+                      (-> (d3/arc)
+                          (.innerRadius r)
+                          (.outerRadius r)))
+          color (d3/scaleOrdinal d3/schemeCategory10)
+          arcs (pie data)]
+      [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+       (map-indexed
+        (fn [idx pie-arc]
+          [:g {:key idx}
+           [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
+           (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
+             [:text.text-xs
+              {:transform (str "translate(" (.centroid arc-label pie-arc) ")") :text-anchor "middle"}
+              (:name (.-data pie-arc))])])
+        arcs)])})
 
 (def line
   {:title "Line Chart"
@@ -157,28 +155,28 @@
                        :stroke (color 0)}]]))
    :code
    '(let [size 300
-                  pie (-> (d3/pie)
-                          (.sort nil)
-                          (.value (fn [d] (:value d))))
-                  arc (-> (d3/arc)
-                          (.innerRadius 0)
-                          (.outerRadius (/ size 2)))
-                  arc-label (let [r (* (/ size 2) 0.8)]
-                              (-> (d3/arc)
-                                  (.innerRadius r)
-                                  (.outerRadius r)))
-                  color (d3/scaleOrdinal d3/schemeCategory10)
-                  arcs (pie data)]
-              [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
-               (map-indexed
-                (fn [idx pie-arc]
-                  [:g {:key idx}
-                   [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
-                   (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
-                     [:text.text-xs
-                      {:transform (str "translate("(.centroid arc-label pie-arc) ")") :text-anchor "middle"}
-                      (:name (.-data pie-arc))])])
-                arcs)])})
+          pie (-> (d3/pie)
+                  (.sort nil)
+                  (.value (fn [d] (:value d))))
+          arc (-> (d3/arc)
+                  (.innerRadius 0)
+                  (.outerRadius (/ size 2)))
+          arc-label (let [r (* (/ size 2) 0.8)]
+                      (-> (d3/arc)
+                          (.innerRadius r)
+                          (.outerRadius r)))
+          color (d3/scaleOrdinal d3/schemeCategory10)
+          arcs (pie data)]
+      [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+       (map-indexed
+        (fn [idx pie-arc]
+          [:g {:key idx}
+           [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
+           (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
+             [:text.text-xs
+              {:transform (str "translate(" (.centroid arc-label pie-arc) ")") :text-anchor "middle"}
+              (:name (.-data pie-arc))])])
+        arcs)])})
 
 (def pack
   {:title "Circle Packing"
@@ -257,26 +255,26 @@
           (.links root))]]))
    :code
    '(let [size 300
-           root ((-> (d3/tree)
-                     (.size (into-array [size size])))
-                 (-> (d3/hierarchy data)))]
-       [:svg {:viewBox (str 0 " " 0 " " size " " size)}
-        [:g
-         (map-indexed
-          (fn [idx node]
-            [:circle {:key idx :cx (.-x node) :cy (.-y node) :r 2}])
-          (.descendants root))]
-        [:g
-         (map-indexed
-          (fn [idx link]
-            [:path {:key idx
-                    :fill "transparent"
-                    :stroke "black"
-                    :d ((-> (d3/linkVertical)
-                            (.x (fn [d] (.-x d)))
-                            (.y (fn [d] (.-y d))))
-                        link)}])
-          (.links root))]])})
+          root ((-> (d3/tree)
+                    (.size (into-array [size size])))
+                (-> (d3/hierarchy data)))]
+      [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+       [:g
+        (map-indexed
+         (fn [idx node]
+           [:circle {:key idx :cx (.-x node) :cy (.-y node) :r 2}])
+         (.descendants root))]
+       [:g
+        (map-indexed
+         (fn [idx link]
+           [:path {:key idx
+                   :fill "transparent"
+                   :stroke "black"
+                   :d ((-> (d3/linkVertical)
+                           (.x (fn [d] (.-x d)))
+                           (.y (fn [d] (.-y d))))
+                       link)}])
+         (.links root))]])})
 
 (def code (:code bar))
 (defn card [children]
@@ -385,7 +383,7 @@
       (.then (fn [res]
                (reset! (:data pack) res)
                (reset! (:data tree) res))))
-    (fn []
+  (fn []
     [:div.text-gray-900.flex.flex-col.h-screen
      [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
       [:div.px-6.py-4.max-w-7xl.mx-auto
