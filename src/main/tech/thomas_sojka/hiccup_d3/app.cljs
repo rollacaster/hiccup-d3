@@ -313,7 +313,7 @@
                {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
                [:pre.overflow-auto.mb-4
                 {:style {:height height} :id (str "data" copy-id)}
-                (if (seq? @data)
+                (if (coll? @data)
                   (with-out-str (pprint @data))
                   (.stringify js/JSON @data nil 2))]
                [:div.flex.justify-center
