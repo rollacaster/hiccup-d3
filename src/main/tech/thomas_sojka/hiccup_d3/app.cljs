@@ -180,6 +180,104 @@
                       (:name (.-data pie-arc))])])
                 arcs)])})
 
+(def pack
+  {:title "Circle Packing"
+   :data (r/atom [])
+   :chart
+   (fn [data]
+     (let [size 300
+           color (d3/scaleOrdinal d3/schemeCategory10)
+           root ((-> (d3/pack)
+                     (.size (into-array [(- size 7) (- size 7)])))
+                 (-> (d3/hierarchy data)
+                     (.sum (fn [d] (.-value d)))
+                     (.sort (fn [a b] (- (.-value b) (.-value a))))))]
+       [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+        [:filter {:id "dropshadow"  :filterUnits "userSpaceOnUse"}
+         [:feGaussianBlur {:in "SourceAlpha" :stdDeviation "3"}]
+         [:feOffset {:dx "3" :dy "3"}]
+         [:feMerge
+          [:feMergeNode]
+          [:feMergeNode {:in "SourceGraphic"}]]]
+        (map-indexed
+         (fn [idx node]
+           [:circle {:key idx
+                     :cx (.-x node) :cy (.-y node) :r (.-r node)
+                     :fill (color (.-height node))
+                     :filter "url(#dropshadow)"}])
+         (rest (.descendants root)))]))
+   :code
+   '(let [size 300
+          color (d3/scaleOrdinal d3/schemeCategory10)
+          root ((-> (d3/pack)
+                    (.size (into-array [(- size 7) (- size 7)])))
+                (-> (d3/hierarchy data)
+                    (.sum (fn [d] (.-value d)))
+                    (.sort (fn [a b] (- (.-value b) (.-value a))))))]
+      [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+       [:filter {:id "dropshadow"  :filterUnits "userSpaceOnUse"}
+        [:feGaussianBlur {:in "SourceAlpha" :stdDeviation "3"}]
+        [:feOffset {:dx "3" :dy "3"}]
+        [:feMerge
+         [:feMergeNode]
+         [:feMergeNode {:in "SourceGraphic"}]]]
+       (map-indexed
+        (fn [idx node]
+          [:circle {:key idx
+                    :cx (.-x node) :cy (.-y node) :r (.-r node)
+                    :fill (color (.-height node))
+                    :filter "url(#dropshadow)"}])
+        (rest (.descendants root)))])})
+
+(def tree
+  {:title "Tree"
+   :data (r/atom [])
+   :chart
+   (fn [data]
+     (let [size 300
+           root ((-> (d3/tree)
+                     (.size (into-array [size size])))
+                 (-> (d3/hierarchy data)))]
+       [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+        [:g
+         (map-indexed
+          (fn [idx node]
+            [:circle {:key idx :cx (.-x node) :cy (.-y node) :r 2}])
+          (.descendants root))]
+        [:g
+         (map-indexed
+          (fn [idx link]
+            [:path {:key idx
+                    :fill "transparent"
+                    :stroke "black"
+                    :d ((-> (d3/linkVertical)
+                            (.x (fn [d] (.-x d)))
+                            (.y (fn [d] (.-y d))))
+                        link)}])
+          (.links root))]]))
+   :code
+   '(let [size 300
+           root ((-> (d3/tree)
+                     (.size (into-array [size size])))
+                 (-> (d3/hierarchy data)))]
+       [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+        [:g
+         (map-indexed
+          (fn [idx node]
+            [:circle {:key idx :cx (.-x node) :cy (.-y node) :r 2}])
+          (.descendants root))]
+        [:g
+         (map-indexed
+          (fn [idx link]
+            [:path {:key idx
+                    :fill "transparent"
+                    :stroke "black"
+                    :d ((-> (d3/linkVertical)
+                            (.x (fn [d] (.-x d)))
+                            (.y (fn [d] (.-y d))))
+                        link)}])
+          (.links root))]])})
+
 (def code (:code bar))
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
@@ -215,7 +313,9 @@
                {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
                [:pre.overflow-auto.mb-4
                 {:style {:height height} :id (str "data" copy-id)}
-                (with-out-str (pprint @data))]
+                (if (seq? @data)
+                  (with-out-str (pprint @data))
+                  (.stringify js/JSON @data nil 2))]
                [:div.flex.justify-center
                 [:button.copy-button.font-bold.border.px-3
                  {:data-clipboard-target (str "#data" copy-id)}
@@ -257,8 +357,6 @@
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/circle-packing?collection=@d3/d3-hierarchy"} "Circle Packing"]]
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/tidy-tree?collection=@d3/d3-hierarchy"} "Tree"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/world-airports?collection=@d3/d3-geo"} "World Map"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sankey-diagram?collection=@d3/d3-sankey"} "Sankey"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/force-directed-graph?collection=@d3/d3-force"} "Force-Directed Graph"]]
@@ -269,19 +367,24 @@
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/hover-voronoi?collection=@d3/d3-delaunay"} "Voronoi"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/streamgraph?collection=@d3/d3-shape"} "Streamgraph"]]]]])
 
+(defn fetch-json [url]
+  (-> (js/fetch url)
+      (.then (fn [res] (.json res)))
+      (.catch (fn [res] (prn res)))))
+
 (defn app []
-  (-> (js/fetch "data/frequencies.json")
-      (.then (fn [res] (.json res)))
-      (.then (fn [res] (reset! (:data bar) (js->clj res :keywordize-keys true))))
-      (.catch (fn [res] (prn res))))
-  (-> (js/fetch "data/population-by-age.json")
-      (.then (fn [res] (.json res)))
-      (.then (fn [res] (reset! (:data pie) (js->clj res :keywordize-keys true))))
-      (.catch (fn [res] (prn res))))
+  (-> (fetch-json "data/frequencies.json")
+      (.then (fn [res] (reset! (:data bar) (js->clj res :keywordize-keys true)))))
+  (-> (fetch-json "data/population-by-age.json")
+      (.then (fn [res] (reset! (:data pie) (js->clj res :keywordize-keys true)))))
   (-> (js/fetch "data/apple-stock.csv")
       (.then (fn [res] (.text res)))
       (.then (fn [res] (reset! (:data line) ((comp #(map parse-stock-data %) csv->clj) res))))
       (.catch (fn [res] (prn res))))
+  (-> (fetch-json "data/flare-2.json")
+      (.then (fn [res]
+               (reset! (:data pack) res)
+               (reset! (:data tree) res))))
     (fn []
     [:div.text-gray-900.flex.flex-col.h-screen
      [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
@@ -302,6 +405,8 @@
       [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
        [chart-container bar]
        [chart-container pie]
+       [chart-container pack]
+       [chart-container tree]
        [chart-container line]
        [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
