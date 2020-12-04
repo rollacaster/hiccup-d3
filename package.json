@@ -5,6 +5,8 @@
   "devDependencies": {
     "autoprefixer": "^10.0.4",
     "cssnano": "^4.1.10",
+    "husky": "^4.3.0",
+    "lint-staged": "^10.5.2",
     "postcss": "^8.1.10",
     "postcss-cli": "^8.3.0",
     "shadow-cljs": "2.11.7",
@@ -15,5 +17,13 @@
     "d3": "^6.2.0",
     "react": "16.13.0",
     "react-dom": "16.13.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "**/*": "clojure -Sdeps '{:deps {cljfmt {:mvn/version \"0.6.4\"}}}' -m cljfmt.main fix"
   }
 }
