@@ -4,7 +4,8 @@
             [clojure.string :as str]
             [reagent.core :as r]
             [reagent.dom :as dom]
-            ["clipboard" :as clipboard]))
+            ["clipboard" :as clipboard])
+  (:require-macros [tech.thomas-sojka.hiccup-d3.macros :as m]))
 
 (defn icon [{:keys [name class]}]
   [:svg.fill-current {:viewBox "0 0 24 24" :class class}
@@ -14,304 +15,170 @@
                 :data "M13 6c3.469 0 2 5 2 5s5-1.594 5 2v9h-12v-16h5zm.827-2h-7.827v20h16v-11.842c0-2.392-5.011-8.158-8.173-8.158zm.173-2l-3-2h-9v22h2v-20h10z"
                 :copy "M22 2v22h-20v-22h3c1.23 0 2.181-1.084 3-2h8c.82.916 1.771 2 3 2h3zm-11 1c0 .552.448 1 1 1 .553 0 1-.448 1-1s-.447-1-1-1c-.552 0-1 .448-1 1zm9 1h-4l-2 2h-3.897l-2.103-2h-4v18h16v-18zm-13 9.729l.855-.791c1 .484 1.635.852 2.76 1.654 2.113-2.399 3.511-3.616 6.106-5.231l.279.64c-2.141 1.869-3.709 3.949-5.967 7.999-1.393-1.64-2.322-2.686-4.033-4.271z")}]])
 (def bar
-  {:title "Bar Chart"
-   :data (r/atom [])
-   :chart (fn [data]
-            (let [size 400
-                  margin {:top 0 :right 0 :left 16 :bottom 0}
-                  x (-> (d3/scaleLinear)
-                        (.range (clj->js [(:left margin) (- size (:right margin))]))
-                        (.domain (clj->js [0 (apply max (map :frequency data))])))
-                  y (-> (d3/scaleBand)
-                        (.domain (clj->js (range (count data))))
-                        (.range (clj->js [(:top margin) (- size (:bottom margin))])))
-                  color (d3/scaleOrdinal d3/schemeCategory10)]
-              [:svg {:viewBox (str "0 0 " size " " size)}
-               (map-indexed
-                (fn [idx {:keys [letter frequency]}]
-                  [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
-                   [:rect {:x (x 0)
-                           :height (.bandwidth y)
-                           :fill (color letter)
-                           :width (x frequency)}]])
-                data)
-               (map-indexed
-                (fn [idx {:keys [letter frequency]}]
-                  [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
-                   [:text {:x 20
-                           :y (+ (/ (.bandwidth y) 2) 1)
-                           :dominant-baseline "middle"} (str frequency)]
-                   [:text.current-fill
-                    {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle"}
-                    (str letter)]])
-                data)]))
-   :code
-   '(fn [data]
-      (let [size 400
-            margin {:top 0 :right 0 :left 13 :bottom 0}
-            x (-> (d3/scaleLinear)
-                  (.range (clj->js [(:left margin) (- size (:right margin))]))
-                  (.domain (clj->js [0 (apply max (map :frequency data))])))
-            y (-> (d3/scaleBand)
-                  (.domain (clj->js (range (count data))))
-                  (.range (clj->js [(:top margin) (- size (:bottom margin))])))
-            color (d3/scaleOrdinal d3/schemeCategory10)]
-        [:svg {:viewBox (str "0 0 " size " " size)}
-         (map-indexed
-          (fn [idx {:keys [letter frequency]}]
-            [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
-             [:rect {:x (x 0)
-                     :height (.bandwidth y)
-                     :fill (color letter)
-                     :width (x frequency)}]])
-          data)
-         (map-indexed
-          (fn [idx {:keys [letter frequency]}]
-            [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
-             [:text {:style {:font-size 8}
-                     :x 17
-                     :y (/ (.bandwidth y) 2)
-                     :dominant-baseline "middle"} (str frequency)]
-             [:text.current-fill
-              {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle" :style {:font-size 10}}
-              (str letter)]])
-          data)]))})
+  (m/build-chart
+   {:title "Bar Chart"
+    :data  (r/atom [])
+    :code  (fn [data]
+             (let [size 400
+                   margin {:top 0 :right 0 :left 16 :bottom 0}
+                   x (-> (d3/scaleLinear)
+                         (.range (clj->js [(:left margin) (- size (:right margin))]))
+                         (.domain (clj->js [0 (apply max (map :frequency data))])))
+                   y (-> (d3/scaleBand)
+                         (.domain (clj->js (range (count data))))
+                         (.range (clj->js [(:top margin) (- size (:bottom margin))])))
+                   color (d3/scaleOrdinal d3/schemeCategory10)]
+               [:svg {:viewBox (str "0 0 " size " " size)}
+                (map-indexed
+                 (fn [idx {:keys [letter frequency]}]
+                   [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
+                    [:rect {:x      (x 0)
+                            :height (.bandwidth y)
+                            :fill   (color letter)
+                            :width  (x frequency)}]])
+                 data)
+                (map-indexed
+                 (fn [idx {:keys [letter frequency]}]
+                   [:g {:key idx :transform (str "translate(" 0 "," (y idx) ")")}
+                    [:text {:x                 20
+                            :y                 (+ (/ (.bandwidth y) 2) 1)
+                            :dominant-baseline "middle"} (str frequency)]
+                    [:text.current-fill
+                     {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle"}
+                     (str letter)]])
+                 data)]))}))
 
 (def pie
-  {:title "Pie Chart"
-   :data (r/atom [])
-   :chart (fn [data]
-            (let [size 300
-                  pie (-> (d3/pie)
-                          (.sort nil)
-                          (.value (fn [d] (:value d))))
-                  arc (-> (d3/arc)
-                          (.innerRadius 0)
-                          (.outerRadius (/ size 2)))
-                  arc-label (let [r (* (/ size 2) 0.8)]
-                              (-> (d3/arc)
-                                  (.innerRadius r)
-                                  (.outerRadius r)))
-                  color (d3/scaleOrdinal d3/schemeCategory10)
-                  arcs (pie data)]
-              [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
-               (map-indexed
-                (fn [idx pie-arc]
-                  [:g {:key idx}
-                   [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
-                   (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.3)
-                     [:text
-                      {:transform (str "translate(" (.centroid arc-label pie-arc) ")") :text-anchor "middle"
-                       :dominant-baseline "middle"}
-                      (:name (.-data pie-arc))])])
-                arcs)]))
-   :code
-   '(let [size 300
-          pie (-> (d3/pie)
-                  (.sort nil)
-                  (.value (fn [d] (:value d))))
-          arc (-> (d3/arc)
-                  (.innerRadius 0)
-                  (.outerRadius (/ size 2)))
-          arc-label (let [r (* (/ size 2) 0.8)]
-                      (-> (d3/arc)
-                          (.innerRadius r)
-                          (.outerRadius r)))
-          color (d3/scaleOrdinal d3/schemeCategory10)
-          arcs (pie data)]
-      [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
-       (map-indexed
-        (fn [idx pie-arc]
-          [:g {:key idx}
-           [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
-           (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
-             [:text.text-xs
-              {:transform (str "translate(" (.centroid arc-label pie-arc) ")") :text-anchor "middle"}
-              (:name (.-data pie-arc))])])
-        arcs)])})
+  (m/build-chart
+   {:title "Pie Chart"
+    :data  (r/atom [])
+    :code  (fn [data]
+             (let [size 300
+                   pie (-> (d3/pie)
+                           (.sort nil)
+                           (.value (fn [d] (:value d))))
+                   arc (-> (d3/arc)
+                           (.innerRadius 0)
+                           (.outerRadius (/ size 2)))
+                   arc-label (let [r (* (/ size 2) 0.8)]
+                               (-> (d3/arc)
+                                   (.innerRadius r)
+                                   (.outerRadius r)))
+                   color (d3/scaleOrdinal d3/schemeCategory10)
+                   arcs (pie data)]
+               [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+                (map-indexed
+                 (fn [idx pie-arc]
+                   [:g {:key idx}
+                    [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
+                    (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.3)
+                      [:text
+                       {:transform         (str "translate(" (.centroid arc-label pie-arc) ")") :text-anchor "middle"
+                        :dominant-baseline "middle"}
+                       (:name (.-data pie-arc))])])
+                 arcs)]))}))
 
 (def line
-  {:title "Line Chart"
-   :data (r/atom [])
-   :chart (fn [data]
-            (let [size 300
-                  margin {:top 0 :right 0 :left 16 :bottom 0}
-                  dates (map :date data)
-                  values (map :close data)
-                  x (-> (d3/scaleUtc)
-                        (.domain (clj->js [(apply min dates) (apply max dates)]))
-                        (.range (clj->js [(:left margin) (- size (:right margin))])))
-                  y (-> (d3/scaleLinear)
-                        (.domain (clj->js [0 (apply max values)]))
-                        (.range (clj->js [(- size (:bottom margin)) (:top margin)])))
-                  color (d3/scaleOrdinal d3/schemeCategory10)
-                  line (-> (d3/line)
-                           (.defined (fn [d] (number? (:close d))))
-                           (.x (fn [d] (x (:date d))))
-                           (.y (fn [d] (y (:close d)))))]
-              [:svg {:viewBox (str 0 " " 0 " " size " " size)}
-               [:path {:d (line data)
-                       :fill "transparent"
-                       :stroke (color 0)}]]))
-   :code
-   '(let [size 300
-          pie (-> (d3/pie)
-                  (.sort nil)
-                  (.value (fn [d] (:value d))))
-          arc (-> (d3/arc)
-                  (.innerRadius 0)
-                  (.outerRadius (/ size 2)))
-          arc-label (let [r (* (/ size 2) 0.8)]
-                      (-> (d3/arc)
-                          (.innerRadius r)
-                          (.outerRadius r)))
-          color (d3/scaleOrdinal d3/schemeCategory10)
-          arcs (pie data)]
-      [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
-       (map-indexed
-        (fn [idx pie-arc]
-          [:g {:key idx}
-           [:path {:d (arc pie-arc) :fill (color (:name (.-data pie-arc)))}]
-           (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.25)
-             [:text.text-xs
-              {:transform (str "translate(" (.centroid arc-label pie-arc) ")") :text-anchor "middle"}
-              (:name (.-data pie-arc))])])
-        arcs)])})
+  (m/build-chart
+   {:title "Line Chart"
+    :data  (r/atom [])
+    :code  (fn [data]
+             (let [size 300
+                   margin {:top 0 :right 0 :left 16 :bottom 0}
+                   dates (map :date data)
+                   values (map :close data)
+                   x (-> (d3/scaleUtc)
+                         (.domain (clj->js [(apply min dates) (apply max dates)]))
+                         (.range (clj->js [(:left margin) (- size (:right margin))])))
+                   y (-> (d3/scaleLinear)
+                         (.domain (clj->js [0 (apply max values)]))
+                         (.range (clj->js [(- size (:bottom margin)) (:top margin)])))
+                   color (d3/scaleOrdinal d3/schemeCategory10)
+                   line (-> (d3/line)
+                            (.defined (fn [d] (number? (:close d))))
+                            (.x (fn [d] (x (:date d))))
+                            (.y (fn [d] (y (:close d)))))]
+               [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+                [:path {:d      (line data)
+                        :fill   "transparent"
+                        :stroke (color 0)}]]))}))
 
 (def pack
-  {:title "Circle Packing"
-   :data (r/atom [])
-   :chart
-   (fn [data]
-     (let [size 300
-           color (d3/scaleOrdinal d3/schemeCategory10)
-           root ((-> (d3/pack)
-                     (.size (into-array [(- size 7) (- size 7)])))
-                 (-> (d3/hierarchy data)
-                     (.sum (fn [d] (.-value d)))
-                     (.sort (fn [a b] (- (.-value b) (.-value a))))))]
-       [:svg {:viewBox (str 0 " " 0 " " size " " size)}
-        [:filter {:id "dropshadow"  :filterUnits "userSpaceOnUse"}
-         [:feGaussianBlur {:in "SourceAlpha" :stdDeviation "3"}]
-         [:feOffset {:dx "3" :dy "3"}]
-         [:feMerge
-          [:feMergeNode]
-          [:feMergeNode {:in "SourceGraphic"}]]]
-        (map-indexed
-         (fn [idx node]
-           [:circle {:key idx
-                     :cx (.-x node) :cy (.-y node) :r (.-r node)
-                     :fill (color (.-height node))
-                     :filter "url(#dropshadow)"}])
-         (rest (.descendants root)))]))
-   :code
-   '(let [size 300
-          color (d3/scaleOrdinal d3/schemeCategory10)
-          root ((-> (d3/pack)
-                    (.size (into-array [(- size 7) (- size 7)])))
-                (-> (d3/hierarchy data)
-                    (.sum (fn [d] (.-value d)))
-                    (.sort (fn [a b] (- (.-value b) (.-value a))))))]
-      [:svg {:viewBox (str 0 " " 0 " " size " " size)}
-       [:filter {:id "dropshadow"  :filterUnits "userSpaceOnUse"}
-        [:feGaussianBlur {:in "SourceAlpha" :stdDeviation "3"}]
-        [:feOffset {:dx "3" :dy "3"}]
-        [:feMerge
-         [:feMergeNode]
-         [:feMergeNode {:in "SourceGraphic"}]]]
-       (map-indexed
-        (fn [idx node]
-          [:circle {:key idx
-                    :cx (.-x node) :cy (.-y node) :r (.-r node)
-                    :fill (color (.-height node))
-                    :filter "url(#dropshadow)"}])
-        (rest (.descendants root)))])})
+  (m/build-chart
+   {:title "Circle Packing"
+    :data  (r/atom [])
+    :code  (fn [data]
+             (let [size 300
+                   color (d3/scaleOrdinal d3/schemeCategory10)
+                   root ((-> (d3/pack)
+                             (.size (into-array [(- size 7) (- size 7)])))
+                         (-> (d3/hierarchy data)
+                             (.sum (fn [d] (.-value d)))
+                             (.sort (fn [a b] (- (.-value b) (.-value a))))))]
+               [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+                [:filter {:id "dropshadow" :filterUnits "userSpaceOnUse"}
+                 [:feGaussianBlur {:in "SourceAlpha" :stdDeviation "3"}]
+                 [:feOffset {:dx "3" :dy "3"}]
+                 [:feMerge
+                  [:feMergeNode]
+                  [:feMergeNode {:in "SourceGraphic"}]]]
+                (map-indexed
+                 (fn [idx node]
+                   [:circle {:key    idx
+                             :cx     (.-x node) :cy (.-y node) :r (.-r node)
+                             :fill   (color (.-height node))
+                             :filter "url(#dropshadow)"}])
+                 (rest (.descendants root)))]))}))
 
 (def tree
-  {:title "Tree"
-   :data (r/atom [])
-   :chart
-   (fn [data]
-     (let [size 300
-           root ((-> (d3/tree)
-                     (.size (into-array [size size])))
-                 (-> (d3/hierarchy data)))]
-       [:svg {:viewBox (str 0 " " 0 " " size " " size)}
-        [:g
-         (map-indexed
-          (fn [idx node]
-            [:circle {:key idx :cx (.-x node) :cy (.-y node) :r 2}])
-          (.descendants root))]
-        [:g
-         (map-indexed
-          (fn [idx link]
-            [:path {:key idx
-                    :fill "transparent"
-                    :stroke "black"
-                    :d ((-> (d3/linkVertical)
-                            (.x (fn [d] (.-x d)))
-                            (.y (fn [d] (.-y d))))
-                        link)}])
-          (.links root))]]))
-   :code
-   '(let [size 300
-          root ((-> (d3/tree)
-                    (.size (into-array [size size])))
-                (-> (d3/hierarchy data)))]
-      [:svg {:viewBox (str 0 " " 0 " " size " " size)}
-       [:g
-        (map-indexed
-         (fn [idx node]
-           [:circle {:key idx :cx (.-x node) :cy (.-y node) :r 2}])
-         (.descendants root))]
-       [:g
-        (map-indexed
-         (fn [idx link]
-           [:path {:key idx
-                   :fill "transparent"
-                   :stroke "black"
-                   :d ((-> (d3/linkVertical)
-                           (.x (fn [d] (.-x d)))
-                           (.y (fn [d] (.-y d))))
-                       link)}])
-         (.links root))]])})
+  (m/build-chart
+   {:title "Tree"
+    :data  (r/atom [])
+    :code  (fn [data]
+             (let [size 300
+                   root ((-> (d3/tree)
+                             (.size (into-array [size size])))
+                         (-> (d3/hierarchy data)))]
+               [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+                [:g
+                 (map-indexed
+                  (fn [idx node]
+                    [:circle {:key idx :cx (.-x node) :cy (.-y node) :r 2}])
+                  (.descendants root))]
+                [:g
+                 (map-indexed
+                  (fn [idx link]
+                    [:path {:key    idx
+                            :fill   "transparent"
+                            :stroke "black"
+                            :d      ((-> (d3/linkVertical)
+                                         (.x (fn [d] (.-x d)))
+                                         (.y (fn [d] (.-y d))))
+                                     link)}])
+                  (.links root))]]))}))
+
 
 (def world-map
-  {:title "World Map"
-   :data (r/atom [])
-   :chart
-   (fn [data]
-     (let [size 393
-           color (d3/scaleOrdinal d3/schemeCategory10)
-           path (-> (d3/geoPath)
-                    (-> (.projection
-                         (-> (d3/geoMercator)
-                             #_(.scale 100)))))]
-       [:div {:style {:height size :display "flex"
-                      :flex-direction "column"
-                      :justify-content "center"}}
-        [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
-         [:g {:transform "translate(0, 200)"}
-          (map-indexed
-           (fn [idx country] [:path {:key idx :d (path country)
-                                     :fill (color idx)}])
-           ^js (.-features data))]]]))
-   :code
-   '(let [size 393
-          color (d3/scaleOrdinal d3/schemeCategory10)
-          path (-> (d3/geoPath)
-                   (-> (.projection
-                        (-> (d3/geoMercator)
-                            #_(.scale 100)))))]
-      [:div {:style {:height size :display "flex"
-                     :flex-direction "column"
-                     :justify-content "center"}}
-       [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
-        [:g {:transform "translate(0, 200)"}
-         (map-indexed
-          (fn [idx country] [:path {:key idx :d (path country)
-                                    :fill (color idx)}])
-          ^js (.-features data))]]])})
+  (m/build-chart
+    {:title "World Map"
+     :data  (r/atom [])
+     :code
+            (fn [data]
+                (let [size 393
+                      color (d3/scaleOrdinal d3/schemeCategory10)
+                      path (-> (d3/geoPath)
+                               (-> (.projection
+                                     (-> (d3/geoMercator)
+                                         #_(.scale 100)))))]
+                     [:div {:style {:height          size :display "flex"
+                                    :flex-direction  "column"
+                                    :justify-content "center"}}
+                      [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
+                       [:g {:transform "translate(0, 200)"}
+                        (map-indexed
+                          (fn [idx country] [:path {:key  idx :d (path country)
+                                                    :fill (color idx)}])
+                          ^js (.-features data))]]]))}))
 
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
