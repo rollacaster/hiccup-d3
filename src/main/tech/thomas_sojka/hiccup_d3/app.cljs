@@ -276,7 +276,43 @@
                        link)}])
          (.links root))]])})
 
-(def code (:code bar))
+(def world-map
+  {:title "World Map"
+   :data (r/atom [])
+   :chart
+   (fn [data]
+     (let [size 393
+           color (d3/scaleOrdinal d3/schemeCategory10)
+           path (-> (d3/geoPath)
+                    (-> (.projection
+                         (-> (d3/geoMercator)
+                             #_(.scale 100)))))]
+       [:div {:style {:height size :display "flex"
+                      :flex-direction "column"
+                      :justify-content "center"}}
+        [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
+         [:g {:transform "translate(0, 200)"}
+          (map-indexed
+           (fn [idx country] [:path {:key idx :d (path country)
+                                     :fill (color idx)}])
+           ^js (.-features data))]]]))
+   :code
+   '(let [size 393
+          color (d3/scaleOrdinal d3/schemeCategory10)
+          path (-> (d3/geoPath)
+                   (-> (.projection
+                        (-> (d3/geoMercator)
+                            #_(.scale 100)))))]
+      [:div {:style {:height size :display "flex"
+                     :flex-direction "column"
+                     :justify-content "center"}}
+       [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
+        [:g {:transform "translate(0, 200)"}
+         (map-indexed
+          (fn [idx country] [:path {:key idx :d (path country)
+                                    :fill (color idx)}])
+          ^js (.-features data))]]])})
+
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
    children])
@@ -355,7 +391,6 @@
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/world-airports?collection=@d3/d3-geo"} "World Map"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sankey-diagram?collection=@d3/d3-sankey"} "Sankey"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/force-directed-graph?collection=@d3/d3-force"} "Force-Directed Graph"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sunburst?collection=@d3/d3-hierarchy"} "Sunburst"]]
@@ -383,6 +418,8 @@
       (.then (fn [res]
                (reset! (:data pack) res)
                (reset! (:data tree) res))))
+  (-> (fetch-json "data/countries.json")
+      (.then (fn [res] (reset! (:data world-map) res))))
   (fn []
     [:div.text-gray-900.flex.flex-col.h-screen
      [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
@@ -405,6 +442,7 @@
        [chart-container pie]
        [chart-container pack]
        [chart-container tree]
+       [chart-container world-map]
        [chart-container line]
        [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
