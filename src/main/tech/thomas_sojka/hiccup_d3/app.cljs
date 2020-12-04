@@ -1,5 +1,6 @@
 (ns tech.thomas-sojka.hiccup-d3.app
   (:require ["d3" :as d3]
+            ["d3-sankey" :as d3-sankey]
             [cljs.pprint :refer [pprint]]
             [clojure.string :as str]
             [reagent.core :as r]
@@ -157,28 +158,73 @@
                                      link)}])
                   (.links root))]]))}))
 
-
 (def world-map
   (m/build-chart
-    {:title "World Map"
-     :data  (r/atom [])
-     :code
-            (fn [data]
-                (let [size 393
-                      color (d3/scaleOrdinal d3/schemeCategory10)
-                      path (-> (d3/geoPath)
-                               (-> (.projection
-                                     (-> (d3/geoMercator)
-                                         #_(.scale 100)))))]
-                     [:div {:style {:height          size :display "flex"
-                                    :flex-direction  "column"
-                                    :justify-content "center"}}
-                      [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
-                       [:g {:transform "translate(0, 200)"}
-                        (map-indexed
-                          (fn [idx country] [:path {:key  idx :d (path country)
-                                                    :fill (color idx)}])
-                          ^js (.-features data))]]]))}))
+   {:title "World Map"
+    :data  (r/atom [])
+    :code
+    (fn [data]
+      (let [size 393
+            color (d3/scaleOrdinal d3/schemeCategory10)
+            path (-> (d3/geoPath)
+                     (-> (.projection
+                          (-> (d3/geoMercator)
+                              #_(.scale 100)))))]
+        [:div {:style {:height          size :display "flex"
+                       :flex-direction  "column"
+                       :justify-content "center"}}
+         [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
+          [:g {:transform "translate(0, 200)"}
+           (map-indexed
+            (fn [idx country] [:path {:key  idx :d (path country)
+                                      :fill (color idx)}])
+            ^js (.-features data))]]]))}))
+
+(def sankey
+  (m/build-chart
+   {:title "Sankey"
+    :data  (r/atom [])
+    :code
+    (fn [data]
+      (let [size 300]
+        [:svg {:viewBox (str "0 0 " size " " size)}
+         (when (> (count data) 0)
+           (let [color (d3/scaleOrdinal d3/schemeCategory10)
+                 data
+                 (clj->js
+                  {:links data
+                   :nodes
+                   (->> data
+                        (map (fn [{:keys [source target]}]
+                               [source target]))
+                        flatten
+                        set
+                        (map (fn [name] {:name name :category (str/replace name #" .*" "")})))})
+                 sankey-data ((-> (d3-sankey/sankey)
+                                  (.nodeId (fn [d] (.-name d)))
+                                  (.extent (clj->js [[1 1] [size size]])))
+                              data)]
+             [:<>
+              [:g
+               (map-indexed (fn [idx node]
+                              [:rect {:key idx
+                                      :height (- (.-y1 node) (.-y0 node))
+                                      :width (- (.-x1 node)
+                                                (.-x0 node))
+                                      :x (.-x0 node)
+                                      :y (.-y0 node)
+                                      :fill (color ^js (.-category node))}])
+                            (.-nodes sankey-data))]
+              [:g
+               (map-indexed
+                (fn [idx link]
+                  [:path {:key idx
+                          :d ((d3-sankey/sankeyLinkHorizontal) link)
+                          :stroke-width (.-width link)
+                          :stroke (color (.-source.name ^js link))
+                          :opacity 0.5
+                          :fill "transparent"}])
+                (.-links sankey-data))]]))]))}))
 
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
@@ -252,13 +298,16 @@
       (update :date #(new js/Date %))
       (update :close js/parseFloat)))
 
+(defn parse-energy-data [energy-data]
+  (-> energy-data
+      (update :value js/parseFloat)))
+
 (defn following-soon []
   [card
    [:div.p-6.md:p-14
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sankey-diagram?collection=@d3/d3-sankey"} "Sankey"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/force-directed-graph?collection=@d3/d3-force"} "Force-Directed Graph"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sunburst?collection=@d3/d3-hierarchy"} "Sunburst"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/stratify-treemap?collection=@d3/d3-hierarchy"} "Treemap"]]
@@ -280,6 +329,10 @@
   (-> (js/fetch "data/apple-stock.csv")
       (.then (fn [res] (.text res)))
       (.then (fn [res] (reset! (:data line) ((comp #(map parse-stock-data %) csv->clj) res))))
+      (.catch (fn [res] (prn res))))
+  (-> (js/fetch "data/energy.csv")
+      (.then (fn [res] (.text res)))
+      (.then (fn [res] (reset! (:data sankey) ((comp #(map parse-energy-data %) csv->clj) res))))
       (.catch (fn [res] (prn res))))
   (-> (fetch-json "data/flare-2.json")
       (.then (fn [res]
@@ -310,6 +363,7 @@
        [chart-container pack]
        [chart-container tree]
        [chart-container world-map]
+       [chart-container sankey]
        [chart-container line]
        [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
