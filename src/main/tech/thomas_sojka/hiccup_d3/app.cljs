@@ -226,6 +226,39 @@
                           :fill "transparent"}])
                 (.-links sankey-data))]]))]))}))
 
+(def graph
+  (m/build-chart
+   {:title "Graph"
+    :data  (r/atom [])
+    :code
+    (fn [data]
+      (let [size 600]
+        (-> (d3/forceSimulation (.-nodes data))
+            (.force "link" (-> (d3/forceLink (.-links data))
+                               (.id (fn [d] (.-id d)))))
+            (.force "charge" (d3/forceManyBody))
+            (.force "center" (-> (d3/forceCenter (/ size 2) (/ size 2))))
+            (.stop)
+            (.tick 1500))
+        [:svg {:viewBox (str "0 0 " size " " size)}
+         [:g
+          (map-indexed (fn [idx node]
+                         [:circle {:key idx
+                                   :cx (.-x node)
+                                   :cy (.-y node)
+                                   :r 5}])
+                       (.-nodes data))]
+         [:g
+          (map-indexed
+           (fn [idx link]
+             [:line {:key idx
+                     :x1 (.-x (.-source link))
+                     :y1 (.-y (.-source link))
+                     :x2 (.-x (.-target link))
+                     :y2 (.-y (.-target link))
+                     :stroke "black"}])
+           (.-links data))]]))}))
+
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
    children])
@@ -308,7 +341,6 @@
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/force-directed-graph?collection=@d3/d3-force"} "Force-Directed Graph"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sunburst?collection=@d3/d3-hierarchy"} "Sunburst"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/stratify-treemap?collection=@d3/d3-hierarchy"} "Treemap"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/chord-diagram?collection=@d3/d3-chord"} "Chord"]]
@@ -340,6 +372,8 @@
                (reset! (:data tree) res))))
   (-> (fetch-json "data/countries.json")
       (.then (fn [res] (reset! (:data world-map) res))))
+  (-> (fetch-json "data/miserables.json")
+      (.then (fn [res] (reset! (:data graph) res))))
   (fn []
     [:div.text-gray-900.flex.flex-col.h-screen
      [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
@@ -364,6 +398,7 @@
        [chart-container tree]
        [chart-container world-map]
        [chart-container sankey]
+       [chart-container graph]
        [chart-container line]
        [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
