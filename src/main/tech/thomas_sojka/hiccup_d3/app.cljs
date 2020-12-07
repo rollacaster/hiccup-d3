@@ -259,6 +259,32 @@
                      :stroke "black"}])
            (.-links data))]]))}))
 
+(def sunburst
+  (m/build-chart
+   {:title "Sunburst"
+    :data  (r/atom [])
+    :code
+    (fn [data]
+      (let [size 300
+            arc (-> (d3/arc)
+                    (.startAngle (fn [d] (.-x0 d)))
+                    (.endAngle (fn [d] (.-x1 d)))
+                    (.innerRadius (fn [d] (.-y0 d)))
+                    (.outerRadius (fn [d] (- (.-y1 d) 1))))
+            radius (/ size 2)
+            color (d3/scaleOrdinal d3/schemeCategory10)
+            partition ((-> (d3/partition)
+                           (.size (clj->js [(* 2 js/Math.PI) radius])))
+                       (-> (d3/hierarchy data)
+                           (.sum (fn [d] (.-value d)))
+                           (.sort (fn [a b] (- (.-value b) (.-value a))))))]
+
+        [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+         [:g
+          (->> (.descendants partition)
+               (filter (fn [d] (not= (.-depth d) 0)))
+               (map-indexed (fn [idx d] [:path {:key idx :d (arc d) :fill (color ^js (.-data.name d))}])))]]))}))
+
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
    children])
@@ -341,7 +367,6 @@
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/sunburst?collection=@d3/d3-hierarchy"} "Sunburst"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/stratify-treemap?collection=@d3/d3-hierarchy"} "Treemap"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/chord-diagram?collection=@d3/d3-chord"} "Chord"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/contours?collection=@d3/d3-contour"} "Contours"]]
@@ -369,7 +394,8 @@
   (-> (fetch-json "data/flare-2.json")
       (.then (fn [res]
                (reset! (:data pack) res)
-               (reset! (:data tree) res))))
+               (reset! (:data tree) res)
+               (reset! (:data sunburst) res))))
   (-> (fetch-json "data/countries.json")
       (.then (fn [res] (reset! (:data world-map) res))))
   (-> (fetch-json "data/miserables.json")
@@ -398,6 +424,7 @@
        [chart-container tree]
        [chart-container world-map]
        [chart-container sankey]
+       [chart-container sunburst]
        [chart-container graph]
        [chart-container line]
        [following-soon]]]
