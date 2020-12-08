@@ -285,6 +285,35 @@
                (filter (fn [d] (not= (.-depth d) 0)))
                (map-indexed (fn [idx d] [:path {:key idx :d (arc d) :fill (color ^js (.-data.name d))}])))]]))}))
 
+(def treemap
+  (m/build-chart
+   {:title "Treemap"
+    :data  (r/atom [])
+    :code
+    (fn [data]
+      (let [size 300
+            color (d3/scaleOrdinal d3/schemeCategory10)
+            root ((-> (d3/treemap)
+                      (.tile d3/treemapBinary)
+                      (.size #js [size size]))
+                  (-> (d3/hierarchy data)
+                      (.sum (fn [d] (.-value d)))
+                      (.sort (fn [a b] (- (.-value b) (.-value a))))))]
+
+        [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+         [:g
+          (->> (.leaves root)
+               (map-indexed (fn [idx d]
+                              [:rect {:key idx
+                                      :x (.-x0 d) :y (.-y0 d)
+                                      :width (- (.-x1 d) (.-x0 d))
+                                      :height (- (.-y1 d) (.-y0 d))
+                                      :stroke "black"
+                                      :fill (loop [d d]
+                                              (if (> (.-depth d) 1)
+                                                (recur (.-parent d))
+                                                (color ^js (.-data.name d))))}])))]]))}))
+
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
    children])
@@ -367,7 +396,6 @@
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/stratify-treemap?collection=@d3/d3-hierarchy"} "Treemap"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/chord-diagram?collection=@d3/d3-chord"} "Chord"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/contours?collection=@d3/d3-contour"} "Contours"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/hover-voronoi?collection=@d3/d3-delaunay"} "Voronoi"]]
@@ -395,7 +423,8 @@
       (.then (fn [res]
                (reset! (:data pack) res)
                (reset! (:data tree) res)
-               (reset! (:data sunburst) res))))
+               (reset! (:data sunburst) res)
+               (reset! (:data treemap) res))))
   (-> (fetch-json "data/countries.json")
       (.then (fn [res] (reset! (:data world-map) res))))
   (-> (fetch-json "data/miserables.json")
@@ -427,6 +456,7 @@
        [chart-container sunburst]
        [chart-container graph]
        [chart-container line]
+       [chart-container treemap]
        [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
       [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
