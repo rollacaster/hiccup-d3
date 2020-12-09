@@ -314,6 +314,44 @@
                                                 (recur (.-parent d))
                                                 (color ^js (.-data.name d))))}])))]]))}))
 
+(def chord
+  (m/build-chart
+   {:title "Chord"
+    :data  (r/atom (clj->js
+                    [[0.096899, 0.008859, 0.000554, 0.004430, 0.025471, 0.024363, 0.005537, 0.025471],
+                     [0.001107, 0.018272, 0.000000, 0.004983, 0.011074, 0.010520, 0.002215, 0.004983],
+                     [0.000554, 0.002769, 0.002215, 0.002215, 0.003876, 0.008306, 0.000554, 0.003322],
+                     [0.000554, 0.001107, 0.000554, 0.012182, 0.011628, 0.006645, 0.004983, 0.010520],
+                     [0.002215, 0.004430, 0.000000, 0.002769, 0.104097, 0.012182, 0.004983, 0.028239],
+                     [0.011628, 0.026024, 0.000000, 0.013843, 0.087486, 0.168328, 0.017165, 0.055925],
+                     [0.000554, 0.004983, 0.000000, 0.003322, 0.004430, 0.008859, 0.017719, 0.004430],
+                     [0.002215, 0.007198, 0.000000, 0.003322, 0.016611, 0.014950, 0.001107, 0.054264]]))
+    :code
+    (fn [data]
+      (let [size 300
+            radius (/ size 2)
+            color (d3/scaleOrdinal d3/schemeCategory10)
+            ribbon (-> (d3/ribbon)
+                       (.radius (- radius 1)))
+            arc (-> (d3/arc)
+                    (.innerRadius (- radius 10))
+                    (.outerRadius radius))
+            chord (-> (d3/chord)
+                      (.sortSubgroups d3/descending)
+                      (.sortChords d3/descending))]
+
+        [:svg {:viewBox (str (- radius) " " (- radius) " " size " " size)}
+         [:g
+          (map-indexed
+           (fn [idx group]
+             [:path {:key idx :d (ribbon group) :fill (color idx)}])
+           (chord data))]
+         [:g
+          (map-indexed
+           (fn [idx group]
+             [:path {:d (arc group) :fill (color idx) :key idx}])
+           (.-groups (chord data)))]]))}))
+
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
    children])
@@ -396,7 +434,6 @@
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/chord-diagram?collection=@d3/d3-chord"} "Chord"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/contours?collection=@d3/d3-contour"} "Contours"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/hover-voronoi?collection=@d3/d3-delaunay"} "Voronoi"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/streamgraph?collection=@d3/d3-shape"} "Streamgraph"]]]]])
@@ -457,6 +494,7 @@
        [chart-container graph]
        [chart-container line]
        [chart-container treemap]
+       [chart-container chord]
        [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
       [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
