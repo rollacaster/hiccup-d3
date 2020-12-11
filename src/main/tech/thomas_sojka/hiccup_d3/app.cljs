@@ -352,6 +352,32 @@
              [:path {:d (arc group) :fill (color idx) :key idx}])
            (.-groups (chord data)))]]))}))
 
+(def contour
+  (m/build-chart
+   {:title "Contour"
+    :data  (r/atom (clj->js []))
+    :code
+    (fn [data]
+      (let [path (d3/geoPath)
+            interpolateTerrain d3/interpolateTurbo
+            color (-> (d3/scaleSequential interpolateTerrain)
+                      (.domain (d3/extent (.-values  @(:data contour))))
+                      (.nice))
+            thresholds (.ticks color 20)
+            width (or (.-width data) 0)
+            height (or (.-height data) 0)
+            contours (-> (d3/contours)
+                         (.size (into-array [width height])))]
+        [:div
+         {:style {:height 399}}
+         [:svg {:viewBox (str 0 " " 0 " " width " " height)}
+          [:g
+           (map-indexed
+            (fn [idx threshold]
+              [:path {:key idx :d (path (.contour contours (.-values data) threshold))
+                      :fill (color threshold)}])
+            thresholds)]]]))}))
+
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
    children])
@@ -434,7 +460,6 @@
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/contours?collection=@d3/d3-contour"} "Contours"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/hover-voronoi?collection=@d3/d3-delaunay"} "Voronoi"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/streamgraph?collection=@d3/d3-shape"} "Streamgraph"]]]]])
 
@@ -466,6 +491,8 @@
       (.then (fn [res] (reset! (:data world-map) res))))
   (-> (fetch-json "data/miserables.json")
       (.then (fn [res] (reset! (:data graph) res))))
+  (-> (fetch-json "data/volcano.json")
+      (.then (fn [res] (reset! (:data contour) res))))
   (fn []
     [:div.text-gray-900.flex.flex-col.h-screen
      [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
@@ -495,6 +522,7 @@
        [chart-container line]
        [chart-container treemap]
        [chart-container chord]
+       [chart-container contour]
        [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
       [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
