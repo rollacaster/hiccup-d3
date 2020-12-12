@@ -355,7 +355,7 @@
 (def contour
   (m/build-chart
    {:title "Contour"
-    :data  (r/atom (clj->js []))
+    :data  (r/atom #js [])
     :code
     (fn [data]
       (let [path (d3/geoPath)
@@ -377,6 +377,20 @@
               [:path {:key idx :d (path (.contour contours (.-values data) threshold))
                       :fill (color threshold)}])
             thresholds)]]]))}))
+
+(def voronoi
+  (m/build-chart
+   {:title "Voronoi"
+    :data  (r/atom [])
+    :code
+    (fn [data]
+      (let [size 300
+            delaunay (.from d3/Delaunay (clj->js data))
+            voronoi (.voronoi delaunay #js[0.5 0.5 (- size 0.5) (- size 0.5)])]
+        [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+         [:path {:fill "transparent"
+                 :stroke "black"
+                 :d (.render voronoi)}]]))}))
 
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
@@ -460,7 +474,6 @@
     [:h2.text-3xl.mb-7.font-semibold.tracking-wide
      "Following soon"]
     [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/hover-voronoi?collection=@d3/d3-delaunay"} "Voronoi"]]
      [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/streamgraph?collection=@d3/d3-shape"} "Streamgraph"]]]]])
 
 (defn fetch-json [url]
@@ -493,6 +506,7 @@
       (.then (fn [res] (reset! (:data graph) res))))
   (-> (fetch-json "data/volcano.json")
       (.then (fn [res] (reset! (:data contour) res))))
+  (reset! (:data voronoi) (map (fn [] [(rand 300) (rand 300)]) (range 100)))
   (fn []
     [:div.text-gray-900.flex.flex-col.h-screen
      [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
@@ -523,6 +537,7 @@
        [chart-container treemap]
        [chart-container chord]
        [chart-container contour]
+       [chart-container voronoi]
        [following-soon]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
       [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
