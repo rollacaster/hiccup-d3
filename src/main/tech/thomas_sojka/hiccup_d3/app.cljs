@@ -392,6 +392,45 @@
                  :stroke "black"
                  :d (.render voronoi)}]]))}))
 
+(def streamgraph
+  (m/build-chart
+   {:title "Streamgraph"
+    :data  (r/atom [])
+    :code
+    (fn [data]
+      (let [size 300
+            data-keys (remove #(= % "date") (map name (keys (first @(:data streamgraph)))))
+            series ((-> (d3/stack)
+                        (.keys data-keys)
+                        (.offset d3/stackOffsetWiggle)
+                        (.order d3/stackOrderInsideOut))
+                    (clj->js data))
+            dates (map :date data)
+            x (-> (d3/scaleUtc)
+                  (.domain
+                   (clj->js
+                    [(apply min dates)
+                     (apply max dates)]))
+                  (.range (clj->js  [0 size])))
+            y (-> (d3/scaleLinear)
+                  (.domain
+                   (clj->js
+                    [(apply min (map #(apply min (map first %)) series))
+                     (apply max (map #(apply max (map first %)) series))]))
+                  (.range (clj->js [0 size])))
+            area (-> (d3/area)
+                     (.x (fn [d] (x ^js (.-data.date d))))
+                     (.y0 (fn [d] (y (first d))))
+                     (.y1 (fn [d] (y (second d)))))
+            color (-> (d3/scaleOrdinal)
+                      (.domain (clj->js data-keys))
+                      (.range d3/schemeCategory10))]
+        [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+         (map-indexed
+          (fn [idx d]
+            [:path {:key idx :d (area d) :fill (color (.-key d))}])
+          series)]))}))
+
 (defn card [children]
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
    children])
@@ -451,13 +490,35 @@
               [:div.flex.items-center.justify-center
                [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
                "Data"]]]]])))))
-(defn csv->clj [csv]
+(defn csv->clj
+  [csv]
   (let [[header-line & content-lines] (str/split-lines csv)
-        headers (map keyword (str/split header-line ","))]
+        headers (map #(-> %
+                          (str/split " ")
+                          str/join
+                          keyword)
+                     (str/split header-line ","))]
     (map
      (fn [line]
        (zipmap headers (str/split line ",")))
      content-lines)))
+(defn parse-unemployment-data [employment-data]
+  (-> employment-data
+      (update :date #(new js/Date %))
+      (update :MiningandExtraction js/parseFloat)
+      (update :Finance js/parseFloat)
+      (update :Leisureandhospitality js/parseFloat)
+      (update :Businessservices js/parseFloat)
+      (update :WholesaleandRetailTrade js/parseFloat)
+      (update :Construction js/parseFloat)
+      (update :Manufacturing js/parseFloat)
+      (update :Information js/parseFloat)
+      (update :Agriculture js/parseFloat)
+      (update :Other js/parseFloat)
+      (update :EducationandHealth js/parseFloat)
+      (update :TransportationandUtilities js/parseFloat)
+      (update :Self-employed js/parseFloat)
+      (update :Government js/parseFloat)))
 
 (defn parse-stock-data [stock-data]
   (-> stock-data
@@ -467,14 +528,6 @@
 (defn parse-energy-data [energy-data]
   (-> energy-data
       (update :value js/parseFloat)))
-
-(defn following-soon []
-  [card
-   [:div.p-6.md:p-14
-    [:h2.text-3xl.mb-7.font-semibold.tracking-wide
-     "Following soon"]
-    [:ul.list-disc.list-inside
-     [:li.mb-2.underline [:a {:href "https://observablehq.com/@d3/streamgraph?collection=@d3/d3-shape"} "Streamgraph"]]]]])
 
 (defn fetch-json [url]
   (-> (js/fetch url)
@@ -493,6 +546,10 @@
   (-> (js/fetch "data/energy.csv")
       (.then (fn [res] (.text res)))
       (.then (fn [res] (reset! (:data sankey) ((comp #(map parse-energy-data %) csv->clj) res))))
+      (.catch (fn [res] (prn res))))
+  (-> (js/fetch "data/unemployment.csv")
+      (.then (fn [res] (.text res)))
+      (.then (fn [res] (reset! (:data streamgraph) ((comp #(map parse-unemployment-data %) csv->clj) res))))
       (.catch (fn [res] (prn res))))
   (-> (fetch-json "data/flare-2.json")
       (.then (fn [res]
@@ -538,7 +595,7 @@
        [chart-container chord]
        [chart-container contour]
        [chart-container voronoi]
-       [following-soon]]]
+       [chart-container streamgraph]]]
      [:footer.bg-gray-800.flex.justify-center.py-2
       [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
 
