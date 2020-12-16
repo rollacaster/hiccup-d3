@@ -171,17 +171,19 @@
       (let [size 393
             color (d3/scaleOrdinal d3/schemeCategory10)
             path (-> (d3/geoPath)
-                     (-> (.projection
-                          (-> (d3/geoMercator)
-                              #_(.scale 100)))))]
-        [:div {:style {:height          size :display "flex"
+                     (.projection (d3/geoMercator)))]
+        [:div {:style {:height size
+                       :display "flex"
                        :flex-direction  "column"
                        :justify-content "center"}}
          [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
-          [:g {:transform "translate(0, 200)"}
-           (map-indexed
-            (fn [idx country] [:path {:key  idx :d (path country)
-                                      :fill (color idx)}])
+          [:g {:transform (str "translate(" 0 ", " 200 ")")}
+           (map
+            (fn [country]
+              (let [country-name ^js (.-properties.abbrev country)]
+                [:path {:key country-name
+                        :d (path country)
+                        :fill (color country-name)}]))
             ^js (.-features data))]]]))}))
 
 (def sankey
