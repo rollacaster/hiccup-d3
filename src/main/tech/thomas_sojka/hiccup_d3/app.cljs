@@ -134,28 +134,32 @@
 (def tree
   (m/build-chart
    {:title "Tree"
-    :data  (r/atom [])
+    :data  (r/atom nil)
     :code  (fn [data]
              (let [size 300
+                   r 2
                    root ((-> (d3/tree)
-                             (.size (into-array [size size])))
-                         (-> (d3/hierarchy data)))]
-               [:svg {:viewBox (str 0 " " 0 " " size " " size)}
+                             (.size (into-array [(- size (* 2 r)) (- size (* 2 r))])))
+                         (-> (d3/hierarchy data)))
+                   draw-link (-> (d3/linkVertical)
+                                 (.x #(.-x %))
+                                 (.y #(.-y %)))]
+               [:svg {:viewBox (str (- r) " " (- r) " " size " " size)}
                 [:g
-                 (map-indexed
-                  (fn [idx node]
-                    [:circle {:key idx :cx (.-x node) :cy (.-y node) :r 2}])
+                 (map
+                  (fn [node]
+                    [:circle {:key ^js (.-data.name node)
+                              :cx (.-x node)
+                              :cy (.-y node)
+                              :r r}])
                   (.descendants root))]
                 [:g
                  (map-indexed
                   (fn [idx link]
-                    [:path {:key    idx
-                            :fill   "transparent"
+                    [:path {:key idx
+                            :fill "transparent"
                             :stroke "black"
-                            :d      ((-> (d3/linkVertical)
-                                         (.x (fn [d] (.-x d)))
-                                         (.y (fn [d] (.-y d))))
-                                     link)}])
+                            :d (draw-link link)}])
                   (.links root))]]))}))
 
 (def world-map
