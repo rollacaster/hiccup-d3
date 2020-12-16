@@ -189,48 +189,40 @@
 (def sankey
   (m/build-chart
    {:title "Sankey"
-    :data  (r/atom [])
+    :data  (r/atom nil)
     :code
     (fn [data]
-      (let [size 300]
+      (let [size 300
+            color (d3/scaleOrdinal d3/schemeCategory10)
+            links->nodes #(->> %
+                               (mapcat (fn [{:keys [source target]}] [source target]))
+                               distinct
+                               (map (fn [name] {:name name :category (str/replace name #" .*" "")})))
+            data (clj->js {:links data :nodes (links->nodes data)})
+            compute-sankey (-> (d3-sankey/sankey)
+                               (.nodeId #(.-name %))
+                               (.size (into-array [size size])))
+            sankey-data (compute-sankey data)]
         [:svg {:viewBox (str "0 0 " size " " size)}
-         (when (> (count data) 0)
-           (let [color (d3/scaleOrdinal d3/schemeCategory10)
-                 data
-                 (clj->js
-                  {:links data
-                   :nodes
-                   (->> data
-                        (map (fn [{:keys [source target]}]
-                               [source target]))
-                        flatten
-                        set
-                        (map (fn [name] {:name name :category (str/replace name #" .*" "")})))})
-                 sankey-data ((-> (d3-sankey/sankey)
-                                  (.nodeId (fn [d] (.-name d)))
-                                  (.extent (clj->js [[1 1] [size size]])))
-                              data)]
-             [:<>
-              [:g
-               (map-indexed (fn [idx node]
-                              [:rect {:key idx
-                                      :height (- (.-y1 node) (.-y0 node))
-                                      :width (- (.-x1 node)
-                                                (.-x0 node))
-                                      :x (.-x0 node)
-                                      :y (.-y0 node)
-                                      :fill (color ^js (.-category node))}])
-                            (.-nodes sankey-data))]
-              [:g
-               (map-indexed
-                (fn [idx link]
-                  [:path {:key idx
-                          :d ((d3-sankey/sankeyLinkHorizontal) link)
-                          :stroke-width (.-width link)
-                          :stroke (color (.-source.name ^js link))
-                          :opacity 0.5
-                          :fill "transparent"}])
-                (.-links sankey-data))]]))]))}))
+         [:g
+          (map (fn [node]
+                 [:rect {:key (.-name node)
+                         :height (- (.-y1 node) (.-y0 node))
+                         :width (- (.-x1 node) (.-x0 node))
+                         :x (.-x0 node)
+                         :y (.-y0 node)
+                         :fill (color ^js (.-category node))}])
+               (.-nodes sankey-data))]
+         [:g
+          (map
+           (fn [link]
+             [:path {:key (.-index link)
+                     :d ((d3-sankey/sankeyLinkHorizontal) link)
+                     :stroke-width (.-width link)
+                     :stroke (color (.-source.name ^js link))
+                     :opacity 0.5
+                     :fill "transparent"}])
+           (.-links sankey-data))]]))}))
 
 (def graph
   (m/build-chart
