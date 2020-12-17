@@ -233,23 +233,23 @@
       (let [size 600]
         (-> (d3/forceSimulation (.-nodes data))
             (.force "link" (-> (d3/forceLink (.-links data))
-                               (.id (fn [d] (.-id d)))))
+                               (.id #(.-id %))))
             (.force "charge" (d3/forceManyBody))
-            (.force "center" (-> (d3/forceCenter (/ size 2) (/ size 2))))
-            (.stop)
+            (.force "center" (d3/forceCenter (/ size 2) (/ size 2)))
+            .stop
             (.tick 1500))
         [:svg {:viewBox (str "0 0 " size " " size)}
          [:g
-          (map-indexed (fn [idx node]
-                         [:circle {:key idx
-                                   :cx (.-x node)
-                                   :cy (.-y node)
-                                   :r 5}])
-                       (.-nodes data))]
+          (map (fn [node]
+                 [:circle {:key (.-id node)
+                           :cx (.-x node)
+                           :cy (.-y node)
+                           :r 5}])
+               (.-nodes data))]
          [:g
-          (map-indexed
-           (fn [idx link]
-             [:line {:key idx
+          (map
+           (fn [link]
+             [:line {:key (.-index link)
                      :x1 (.-x (.-source link))
                      :y1 (.-y (.-source link))
                      :x2 (.-x (.-target link))
