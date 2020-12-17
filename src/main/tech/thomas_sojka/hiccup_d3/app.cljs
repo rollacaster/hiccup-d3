@@ -260,28 +260,30 @@
 (def sunburst
   (m/build-chart
    {:title "Sunburst"
-    :data  (r/atom [])
+    :data (r/atom nil)
     :code
     (fn [data]
       (let [size 300
             arc (-> (d3/arc)
-                    (.startAngle (fn [d] (.-x0 d)))
-                    (.endAngle (fn [d] (.-x1 d)))
-                    (.innerRadius (fn [d] (.-y0 d)))
-                    (.outerRadius (fn [d] (- (.-y1 d) 1))))
+                    (.startAngle #(.-x0 %))
+                    (.endAngle #(.-x1 %))
+                    (.innerRadius #(.-y0 %))
+                    (.outerRadius #(- (.-y1 %) 1)))
             radius (/ size 2)
             color (d3/scaleOrdinal d3/schemeCategory10)
             partition ((-> (d3/partition)
-                           (.size (clj->js [(* 2 js/Math.PI) radius])))
+                           (.size (into-array [(* 2 js/Math.PI) radius])))
                        (-> (d3/hierarchy data)
-                           (.sum (fn [d] (.-value d)))
-                           (.sort (fn [a b] (- (.-value b) (.-value a))))))]
-
+                           (.sum #(.-value %))
+                           (.sort #(- (.-value %2) (.-value %1)))))]
         [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
          [:g
-          (->> (.descendants partition)
-               (filter (fn [d] (not= (.-depth d) 0)))
-               (map-indexed (fn [idx d] [:path {:key idx :d (arc d) :fill (color ^js (.-data.name d))}])))]]))}))
+          (map
+           (fn [d]
+             [:path {:key  ^js (.-data.name d)
+                     :d (arc d)
+                     :fill (color ^js (.-data.name d))}])
+           (.descendants partition))]]))}))
 
 (def treemap
   (m/build-chart
