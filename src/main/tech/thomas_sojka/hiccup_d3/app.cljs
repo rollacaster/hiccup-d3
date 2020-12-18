@@ -288,31 +288,31 @@
 (def treemap
   (m/build-chart
    {:title "Treemap"
-    :data  (r/atom [])
+    :data  (r/atom nil)
     :code
     (fn [data]
       (let [size 300
             color (d3/scaleOrdinal d3/schemeCategory10)
             root ((-> (d3/treemap)
                       (.tile d3/treemapBinary)
-                      (.size #js [size size]))
+                      (.size (into-array [size size])))
                   (-> (d3/hierarchy data)
-                      (.sum (fn [d] (.-value d)))
-                      (.sort (fn [a b] (- (.-value b) (.-value a))))))]
-
+                      (.sum #(.-value %))
+                      (.sort #(- (.-value %2) (.-value %1)))))]
         [:svg {:viewBox (str 0 " " 0 " " size " " size)}
          [:g
           (->> (.leaves root)
-               (map-indexed (fn [idx d]
-                              [:rect {:key idx
-                                      :x (.-x0 d) :y (.-y0 d)
-                                      :width (- (.-x1 d) (.-x0 d))
-                                      :height (- (.-y1 d) (.-y0 d))
-                                      :stroke "black"
-                                      :fill (loop [d d]
-                                              (if (> (.-depth d) 1)
-                                                (recur (.-parent d))
-                                                (color ^js (.-data.name d))))}])))]]))}))
+               (map (fn [d]
+                      (let [parent-name (loop [d d]
+                                          (if (> (.-depth d) 1)
+                                            (recur (.-parent d))
+                                            ^js (.-data.name d)))]
+                        [:rect {:key ^js (.-data.name d)
+                                :x (.-x0 d) :y (.-y0 d)
+                                :width (- (.-x1 d) (.-x0 d))
+                                :height (- (.-y1 d) (.-y0 d))
+                                :stroke "black"
+                                :fill (color parent-name)}]))))]]))}))
 
 (def chord
   (m/build-chart
