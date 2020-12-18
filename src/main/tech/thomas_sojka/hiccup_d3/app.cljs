@@ -356,26 +356,26 @@
 (def contour
   (m/build-chart
    {:title "Contour"
-    :data  (r/atom #js [])
+    :data (r/atom nil)
     :code
     (fn [data]
       (let [path (d3/geoPath)
-            interpolateTerrain d3/interpolateTurbo
-            color (-> (d3/scaleSequential interpolateTerrain)
-                      (.domain (d3/extent (.-values  @(:data contour))))
+            color (-> (d3/scaleSequential d3/interpolateTurbo)
+                      (.domain (d3/extent (.-values data)))
                       (.nice))
             thresholds (.ticks color 20)
-            width (or (.-width data) 0)
-            height (or (.-height data) 0)
+            width (.-width data)
+            height (.-height data)
             contours (-> (d3/contours)
                          (.size (into-array [width height])))]
         [:div
          {:style {:height 399}}
          [:svg {:viewBox (str 0 " " 0 " " width " " height)}
           [:g
-           (map-indexed
-            (fn [idx threshold]
-              [:path {:key idx :d (path (.contour contours (.-values data) threshold))
+           (map
+            (fn [threshold]
+              [:path {:key threshold
+                      :d (path (.contour contours (.-values data) threshold))
                       :fill (color threshold)}])
             thresholds)]]]))}))
 
