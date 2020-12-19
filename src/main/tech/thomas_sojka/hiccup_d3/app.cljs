@@ -387,7 +387,7 @@
     (fn [data]
       (let [size 300
             delaunay (.from d3/Delaunay (clj->js data))
-            voronoi (.voronoi delaunay #js[0.5 0.5 (- size 0.5) (- size 0.5)])]
+            voronoi (.voronoi delaunay #js[0 0 size size])]
         [:svg {:viewBox (str 0 " " 0 " " size " " size)}
          [:path {:fill "transparent"
                  :stroke "black"
@@ -400,36 +400,32 @@
     :code
     (fn [data]
       (let [size 300
-            data-keys (remove #(= % "date") (map name (keys (first @(:data streamgraph)))))
-            series ((-> (d3/stack)
-                        (.keys data-keys)
-                        (.offset d3/stackOffsetWiggle)
-                        (.order d3/stackOrderInsideOut))
-                    (clj->js data))
+            data-keys (remove #(= % "date") (map name (keys (first data))))
+            create-series (-> (d3/stack)
+                              (.keys data-keys)
+                              (.offset d3/stackOffsetWiggle)
+                              (.order d3/stackOrderInsideOut))
+            series (create-series (clj->js data))
             dates (map :date data)
             x (-> (d3/scaleUtc)
-                  (.domain
-                   (clj->js
-                    [(apply min dates)
-                     (apply max dates)]))
-                  (.range (clj->js  [0 size])))
+                  (.domain (into-array [(apply min dates) (apply max dates)]))
+                  (.range (into-array  [0 size])))
             y (-> (d3/scaleLinear)
                   (.domain
-                   (clj->js
+                   (into-array
                     [(apply min (map #(apply min (map first %)) series))
-                     (apply max (map #(apply max (map first %)) series))]))
-                  (.range (clj->js [0 size])))
+                     (apply max (map #(apply max (map last %)) series))]))
+                  (.range (into-array [0 size])))
             area (-> (d3/area)
                      (.x (fn [d] (x ^js (.-data.date d))))
-                     (.y0 (fn [d] (y (first d))))
-                     (.y1 (fn [d] (y (second d)))))
+                     (.y0 (fn [[y0]] (y y0)))
+                     (.y1 (fn [[_ y1]] (y y1))))
             color (-> (d3/scaleOrdinal)
                       (.domain (clj->js data-keys))
                       (.range d3/schemeCategory10))]
         [:svg {:viewBox (str 0 " " 0 " " size " " size)}
-         (map-indexed
-          (fn [idx d]
-            [:path {:key idx :d (area d) :fill (color (.-key d))}])
+         (map
+          (fn [d] [:path {:key (.-index d) :d (area d) :fill (color (.-key d))}])
           series)]))}))
 
 (defn card [children]
