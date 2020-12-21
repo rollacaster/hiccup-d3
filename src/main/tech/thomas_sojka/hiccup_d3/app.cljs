@@ -434,7 +434,7 @@
 
 (defn chart-container []
   (let [copy-id (random-uuid)]
-    (new clipboard ".copy-button")
+    (clipboard. ".copy-button")
     (let [active-tab (r/atom :chart)]
       (fn [{:keys [title chart code data]}]
         (let [height (- 393.08 42)]
@@ -502,7 +502,7 @@
      content-lines)))
 (defn parse-unemployment-data [employment-data]
   (-> employment-data
-      (update :date #(new js/Date %))
+      (update :date #(js/Date. %))
       (update :MiningandExtraction js/parseFloat)
       (update :Finance js/parseFloat)
       (update :Leisureandhospitality js/parseFloat)
@@ -520,7 +520,7 @@
 
 (defn parse-stock-data [stock-data]
   (-> stock-data
-      (update :date #(new js/Date %))
+      (update :date #(js/Date. %))
       (update :close js/parseFloat)))
 
 (defn parse-energy-data [energy-data]
