@@ -400,7 +400,7 @@
     :code
     (fn [data]
       (let [size 300
-            data-keys (remove #(= % "date") (map name (keys (first data))))
+            data-keys (remove #{"date"} (map name (keys (first data))))
             create-series (-> (d3/stack)
                               (.keys data-keys)
                               (.offset d3/stackOffsetWiggle)
