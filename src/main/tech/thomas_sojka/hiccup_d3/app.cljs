@@ -15,6 +15,19 @@
                 :code "M24 10.935v2.131l-8 3.947v-2.23l5.64-2.783-5.64-2.79v-2.223l8 3.948zm-16 3.848l-5.64-2.783 5.64-2.79v-2.223l-8 3.948v2.131l8 3.947v-2.23zm7.047-10.783h-2.078l-4.011 16h2.073l4.016-16z"
                 :data "M13 6c3.469 0 2 5 2 5s5-1.594 5 2v9h-12v-16h5zm.827-2h-7.827v20h16v-11.842c0-2.392-5.011-8.158-8.173-8.158zm.173-2l-3-2h-9v22h2v-20h10z"
                 :copy "M22 2v22h-20v-22h3c1.23 0 2.181-1.084 3-2h8c.82.916 1.771 2 3 2h3zm-11 1c0 .552.448 1 1 1 .553 0 1-.448 1-1s-.447-1-1-1c-.552 0-1 .448-1 1zm9 1h-4l-2 2h-3.897l-2.103-2h-4v18h16v-18zm-13 9.729l.855-.791c1 .484 1.635.852 2.76 1.654 2.113-2.399 3.511-3.616 6.106-5.231l.279.64c-2.141 1.869-3.709 3.949-5.967 7.999-1.393-1.64-2.322-2.686-4.033-4.271z")}]])
+
+(defn spinner []
+  [:svg {:width "38" :height "38" :viewBox "0 0 38 38"}
+   [:defs [:linearGradient#a {:x1 "8.042%" :y1 "0%" :x2 "65.682%" :y2 "23.865%"}
+           [:stop {:stop-color "#1F2937" :stop-opacity "0" :offset "0%"}]
+           [:stop {:stop-color "#1F2937" :stop-opacity ".631" :offset "63.146%"}]
+           [:stop {:stop-color "#1F2937" :offset "100%"}]]]
+   [:g {:fill "none" :fill-rule "evenodd"}
+    [:g {:transform "translate(1 1)"}
+     [:path#Oval-2 {:d "M36 18c0-9.94-8.06-18-18-18" :stroke "url(#a)" :stroke-width "2"}
+      [:animateTransform {:attributeName "transform" :type "rotate" :from "0 18 18" :to "360 18 18" :dur "0.9s" :repeatCount "indefinite"}]]
+     [:circle {:fill "#1F2937" :cx "36" :cy "18" :r "1"}
+      [:animateTransform {:attributeName "transform" :type "rotate" :from "0 18 18" :to "360 18 18" :dur "0.9s" :repeatCount "indefinite"}]]]]])
 (def bar
   (m/build-chart
    {:title "Bar Chart"
@@ -445,9 +458,13 @@
               title]
              [:div
               [:div
-               {:class (r/class-names (when-not (= @active-tab :chart) "hidden"))}
-               (when @data
-                 [chart @data])]
+               {:class
+                (r/class-names (when-not (= @active-tab :chart) "hidden")
+                               (when-not @data "flex justify-center items-center"))
+                :style {:height 393}}
+               (if @data
+                 [chart @data]
+                 [spinner])]
               [:div
                {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
                [:pre.overflow-auto.mb-4
