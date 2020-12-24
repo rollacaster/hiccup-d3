@@ -28,10 +28,31 @@
       [:animateTransform {:attributeName "transform" :type "rotate" :from "0 18 18" :to "360 18 18" :dur "0.9s" :repeatCount "indefinite"}]]
      [:circle {:fill "#1F2937" :cx "36" :cy "18" :r "1"}
       [:animateTransform {:attributeName "transform" :type "rotate" :from "0 18 18" :to "360 18 18" :dur "0.9s" :repeatCount "indefinite"}]]]]])
+
+(defn fetch-json [url]
+  (-> (js/fetch url)
+      (.then (fn [res] (.json res)))
+      (.catch (fn [res] (prn res)))))
+
+(defn csv->clj
+  [csv]
+  (let [[header-line & content-lines] (str/split-lines csv)
+        headers (map #(-> %
+                          (str/split " ")
+                          str/join
+                          keyword)
+                     (str/split header-line ","))]
+    (map
+     (fn [line]
+       (zipmap headers (str/split line ",")))
+     content-lines)))
+
 (def bar
   (m/build-chart
-   {:title "Bar Chart"
-    :data  (r/atom [])
+   {:load (fn []
+            (-> (fetch-json "data/frequencies.json")
+                (.then (fn [res] (js->clj res :keywordize-keys true)))))
+    :title "Bar Chart"
     :code  (fn [data]
              (let [size 400
                    margin {:top 0 :right 0 :left 16 :bottom 0}
@@ -66,7 +87,9 @@
 (def pie
   (m/build-chart
    {:title "Pie Chart"
-    :data  (r/atom [])
+    :load  (fn []
+             (-> (fetch-json "data/population-by-age.json")
+                 (.then (fn [res] (reset! (:data pie) (js->clj res :keywordize-keys true))))))
     :code  (fn [data]
              (let [size 300
                    pie (-> (d3/pie)
@@ -97,7 +120,14 @@
 (def line
   (m/build-chart
    {:title "Line Chart"
-    :data  (r/atom [])
+    :load  (fn []
+             (let [parse-stock-data (fn [stock-data]
+                                      (-> stock-data
+                                          (update :date #(js/Date. %))
+                                          (update :close js/parseFloat)))]
+               (-> (js/fetch "data/apple-stock.csv")
+                   (.then (fn [res] (.text res)))
+                   (.then (fn [res] (reset! (:data line) ((comp #(map parse-stock-data %) csv->clj) res)))))))
     :code  (fn [data]
              (let [size 300
                    dates (map :date data)
@@ -119,7 +149,7 @@
 (def pack
   (m/build-chart
    {:title "Circle Packing"
-    :data  (r/atom nil)
+    :load  (fn [] (-> (fetch-json "data/flare-2.json")))
     :code  (fn [data]
              (let [size 300
                    color (d3/scaleOrdinal d3/schemeCategory10)
@@ -147,7 +177,7 @@
 (def tree
   (m/build-chart
    {:title "Tree"
-    :data  (r/atom nil)
+    :load  (fn [] (-> (fetch-json "data/flare-2.json")))
     :code  (fn [data]
              (let [size 300
                    r 2
@@ -178,7 +208,7 @@
 (def world-map
   (m/build-chart
    {:title "World Map"
-    :data  (r/atom [])
+    :load  (fn [] (-> (fetch-json "data/countries.json")))
     :code
     (fn [data]
       (let [size 393
@@ -202,7 +232,14 @@
 (def sankey
   (m/build-chart
    {:title "Sankey"
-    :data  (r/atom nil)
+    :load  (fn []
+             (let [parse-energy-data (fn [energy-data]
+                                       (-> energy-data
+                                           (update :value js/parseFloat)))]
+               (-> (js/fetch "data/energy.csv")
+                   (.then (fn [res] (.text res)))
+                   (.then (fn [res] (reset! (:data sankey) ((comp #(map parse-energy-data %) csv->clj) res))))
+                   (.catch (fn [res] (prn res))))))
     :code
     (fn [data]
       (let [size 300
@@ -240,7 +277,7 @@
 (def graph
   (m/build-chart
    {:title "Graph"
-    :data  (r/atom [])
+    :load  (fn [] (-> (fetch-json "data/miserables.json")))
     :code
     (fn [data]
       (let [size 600]
@@ -273,7 +310,7 @@
 (def sunburst
   (m/build-chart
    {:title "Sunburst"
-    :data (r/atom nil)
+    :load (fn [] (fetch-json "data/flare-2.json"))
     :code
     (fn [data]
       (let [size 300
@@ -301,7 +338,7 @@
 (def treemap
   (m/build-chart
    {:title "Treemap"
-    :data  (r/atom nil)
+    :load (fn [] (fetch-json "data/flare-2.json"))
     :code
     (fn [data]
       (let [size 300
@@ -330,7 +367,8 @@
 (def chord
   (m/build-chart
    {:title "Chord"
-    :data  (r/atom (clj->js
+    :load  (fn [] (js/Promise.resolve
+                   (clj->js
                     [[0.096899, 0.008859, 0.000554, 0.004430, 0.025471, 0.024363, 0.005537, 0.025471],
                      [0.001107, 0.018272, 0.000000, 0.004983, 0.011074, 0.010520, 0.002215, 0.004983],
                      [0.000554, 0.002769, 0.002215, 0.002215, 0.003876, 0.008306, 0.000554, 0.003322],
@@ -338,7 +376,7 @@
                      [0.002215, 0.004430, 0.000000, 0.002769, 0.104097, 0.012182, 0.004983, 0.028239],
                      [0.011628, 0.026024, 0.000000, 0.013843, 0.087486, 0.168328, 0.017165, 0.055925],
                      [0.000554, 0.004983, 0.000000, 0.003322, 0.004430, 0.008859, 0.017719, 0.004430],
-                     [0.002215, 0.007198, 0.000000, 0.003322, 0.016611, 0.014950, 0.001107, 0.054264]]))
+                     [0.002215, 0.007198, 0.000000, 0.003322, 0.016611, 0.014950, 0.001107, 0.054264]])))
     :code
     (fn [data]
       (let [size 300
@@ -369,7 +407,7 @@
 (def contour
   (m/build-chart
    {:title "Contour"
-    :data (r/atom nil)
+    :load (fn [] (fetch-json "data/volcano.json"))
     :code
     (fn [data]
       (let [path (d3/geoPath)
@@ -395,7 +433,7 @@
 (def voronoi
   (m/build-chart
    {:title "Voronoi"
-    :data  (r/atom [])
+    :load  (fn [] (js/Promise.resolve (map (fn [] [(rand 300) (rand 300)]) (range 100))))
     :code
     (fn [data]
       (let [size 300
@@ -409,7 +447,26 @@
 (def streamgraph
   (m/build-chart
    {:title "Streamgraph"
-    :data  (r/atom [])
+    :load (let [parse-unemployment-data (fn [employment-data]
+                                          (-> employment-data
+                                              (update :date #(js/Date. %))
+                                              (update :MiningandExtraction js/parseFloat)
+                                              (update :Finance js/parseFloat)
+                                              (update :Leisureandhospitality js/parseFloat)
+                                              (update :Businessservices js/parseFloat)
+                                              (update :WholesaleandRetailTrade js/parseFloat)
+                                              (update :Construction js/parseFloat)
+                                              (update :Manufacturing js/parseFloat)
+                                              (update :Information js/parseFloat)
+                                              (update :Agriculture js/parseFloat)
+                                              (update :Other js/parseFloat)
+                                              (update :EducationandHealth js/parseFloat)
+                                              (update :TransportationandUtilities js/parseFloat)
+                                              (update :Self-employed js/parseFloat)
+                                              (update :Government js/parseFloat)))]
+            (fn [] (-> (js/fetch "data/unemployment.csv")
+                       (.then (fn [res] (.text res)))
+                       (.then (fn [res] ((comp #(map parse-unemployment-data %) csv->clj) res))))))
     :code
     (fn [data]
       (let [size 300
@@ -505,114 +562,41 @@
               [:div.flex.items-center.justify-center
                [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
                "Data"]]]]])))))
-(defn csv->clj
-  [csv]
-  (let [[header-line & content-lines] (str/split-lines csv)
-        headers (map #(-> %
-                          (str/split " ")
-                          str/join
-                          keyword)
-                     (str/split header-line ","))]
-    (map
-     (fn [line]
-       (zipmap headers (str/split line ",")))
-     content-lines)))
-(defn parse-unemployment-data [employment-data]
-  (-> employment-data
-      (update :date #(js/Date. %))
-      (update :MiningandExtraction js/parseFloat)
-      (update :Finance js/parseFloat)
-      (update :Leisureandhospitality js/parseFloat)
-      (update :Businessservices js/parseFloat)
-      (update :WholesaleandRetailTrade js/parseFloat)
-      (update :Construction js/parseFloat)
-      (update :Manufacturing js/parseFloat)
-      (update :Information js/parseFloat)
-      (update :Agriculture js/parseFloat)
-      (update :Other js/parseFloat)
-      (update :EducationandHealth js/parseFloat)
-      (update :TransportationandUtilities js/parseFloat)
-      (update :Self-employed js/parseFloat)
-      (update :Government js/parseFloat)))
-
-(defn parse-stock-data [stock-data]
-  (-> stock-data
-      (update :date #(js/Date. %))
-      (update :close js/parseFloat)))
-
-(defn parse-energy-data [energy-data]
-  (-> energy-data
-      (update :value js/parseFloat)))
-
-(defn fetch-json [url]
-  (-> (js/fetch url)
-      (.then (fn [res] (.json res)))
-      (.catch (fn [res] (prn res)))))
 
 (defn app []
-  (-> (fetch-json "data/frequencies.json")
-      (.then (fn [res] (reset! (:data bar) (js->clj res :keywordize-keys true)))))
-  (-> (fetch-json "data/population-by-age.json")
-      (.then (fn [res] (reset! (:data pie) (js->clj res :keywordize-keys true)))))
-  (-> (js/fetch "data/apple-stock.csv")
-      (.then (fn [res] (.text res)))
-      (.then (fn [res] (reset! (:data line) ((comp #(map parse-stock-data %) csv->clj) res))))
-      (.catch (fn [res] (prn res))))
-  (-> (js/fetch "data/energy.csv")
-      (.then (fn [res] (.text res)))
-      (.then (fn [res] (reset! (:data sankey) ((comp #(map parse-energy-data %) csv->clj) res))))
-      (.catch (fn [res] (prn res))))
-  (-> (js/fetch "data/unemployment.csv")
-      (.then (fn [res] (.text res)))
-      (.then (fn [res] (reset! (:data streamgraph) ((comp #(map parse-unemployment-data %) csv->clj) res))))
-      (.catch (fn [res] (prn res))))
-  (-> (fetch-json "data/flare-2.json")
-      (.then (fn [res]
-               (reset! (:data pack) res)
-               (reset! (:data tree) res)
-               (reset! (:data sunburst) res)
-               (reset! (:data treemap) res))))
-  (-> (fetch-json "data/countries.json")
-      (.then (fn [res] (reset! (:data world-map) res))))
-  (-> (fetch-json "data/miserables.json")
-      (.then (fn [res] (reset! (:data graph) res))))
-  (-> (fetch-json "data/volcano.json")
-      (.then (fn [res] (reset! (:data contour) res))))
-  (reset! (:data voronoi) (map (fn [] [(rand 300) (rand 300)]) (range 100)))
-  (fn []
-    [:div.text-gray-900.flex.flex-col.h-screen
-     [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
-      [:div.px-6.py-4.max-w-7xl.mx-auto
-       [:h1.text-xl.font-bold.text-white
-        [:a {:href "https://rollacaster.github.io/hiccup-d3/"} "hiccup-d3"]]
-       [:div.text-white.py-12.flex
-        [:div.text-4xl {:class "lg:w-1/2"}
-         [:div.max-w-md
-          "Ready-made ClojureScript examples for D3"]]
-        [:div.text-lg.hidden.md:block {:class "w-1/2"}
-         [:div.max-w-md
-          "Transforming D3 code to ClojureScript is complex. Use these starting points to create a new chart with "
-          [:a.underline {:href "https://github.com/weavejester/hiccup"} "hiccup"]
-          ". No functionality was wrapped, access the full "
-          [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
-     [:div.flex-1
-      [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
-       [chart-container bar]
-       [chart-container pie]
-       [chart-container pack]
-       [chart-container tree]
-       [chart-container world-map]
-       [chart-container sankey]
-       [chart-container sunburst]
-       [chart-container graph]
-       [chart-container line]
-       [chart-container treemap]
-       [chart-container chord]
-       [chart-container contour]
-       [chart-container voronoi]
-       [chart-container streamgraph]]]
-     [:footer.bg-gray-800.flex.justify-center.py-2
-      [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]))
+  [:div.text-gray-900.flex.flex-col.h-screen
+   [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
+    [:div.px-6.py-4.max-w-7xl.mx-auto
+     [:h1.text-xl.font-bold.text-white
+      [:a {:href "https://rollacaster.github.io/hiccup-d3/"} "hiccup-d3"]]
+     [:div.text-white.py-12.flex
+      [:div.text-4xl {:class "lg:w-1/2"}
+       [:div.max-w-md
+        "Ready-made ClojureScript examples for D3"]]
+      [:div.text-lg.hidden.md:block {:class "w-1/2"}
+       [:div.max-w-md
+        "Transforming D3 code to ClojureScript is complex. Use these starting points to create a new chart with "
+        [:a.underline {:href "https://github.com/weavejester/hiccup"} "hiccup"]
+        ". No functionality was wrapped, access the full "
+        [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
+   [:div.flex-1
+    [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
+     [chart-container bar]
+     [chart-container pie]
+     [chart-container pack]
+     [chart-container tree]
+     [chart-container world-map]
+     [chart-container sankey]
+     [chart-container sunburst]
+     [chart-container graph]
+     [chart-container line]
+     [chart-container treemap]
+     [chart-container chord]
+     [chart-container contour]
+     [chart-container voronoi]
+     [chart-container streamgraph]]]
+   [:footer.bg-gray-800.flex.justify-center.py-2
+    [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]])
 
 (dom/render [app] (js/document.getElementById "root"))
 
