@@ -3,21 +3,21 @@
   "version": "0.0.1",
   "private": true,
   "devDependencies": {
-    "autoprefixer": "^10.0.4",
+    "autoprefixer": "^10.1.0",
     "cssnano": "^4.1.10",
-    "husky": "^4.3.0",
-    "lint-staged": "^10.5.2",
-    "postcss": "^8.1.10",
-    "postcss-cli": "^8.3.0",
-    "shadow-cljs": "2.11.7",
-    "tailwindcss": "^2.0.1"
+    "husky": "^4.3.6",
+    "lint-staged": "^10.5.3",
+    "postcss": "^8.2.1",
+    "postcss-cli": "^8.3.1",
+    "shadow-cljs": "^2.11.11",
+    "tailwindcss": "^2.0.2"
   },
   "dependencies": {
     "clipboard": "^2.0.6",
-    "d3": "^6.3.0",
+    "d3": "^6.3.1",
     "d3-sankey": "^0.12.3",
-    "react": "16.13.0",
-    "react-dom": "16.13.0"
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1"
   },
   "husky": {
     "hooks": {
