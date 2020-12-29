@@ -506,12 +506,12 @@
   (let [copy-id (random-uuid)]
     (clipboard. ".copy-button")
     (let [active-tab (r/atom :chart)]
-      (fn [{:keys [title chart code data]}]
+      (fn [{:keys [title chart code data d3-apis]}]
         (let [height (- 393.08 42)]
           [card
            [:<>
-            [:div.p-6.md:p-14.border-b
-             [:h2.text-3xl.mb-7.font-semibold.tracking-wide
+            [:div.p-6.md:pt-14.md:px-14.border-b
+             [:h2.text-3xl.font-semibold.tracking-wide.mb-3
               title]
              [:div
               [:div
@@ -545,7 +545,14 @@
                  {:data-clipboard-target (str "#data" copy-id)}
                  [:div.flex.items-center.justify-center
                   [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
-                  "copy"]]]]]]
+                  "copy"]]]]
+              [:div.pt-6
+               [:h3.mb-2.text-sm.font-bold.pl-3 "d3 APIs"]
+               [:ul.flex.flex-wrap
+                (map (fn [{:keys [fn doc-link]}]
+                       [:li.rounded-full.px-3.py-1.text-white.mr-2.mb-2
+                        {:key fn :class (if doc-link "bg-gray-700" "bg-red-400")} [:a {:href doc-link :target "_blank"} fn]])
+                     d3-apis)]]]]
             [:div.flex.divide-x
              [:button.p-5.md:p-6.hover:bg-gray-100
               {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
