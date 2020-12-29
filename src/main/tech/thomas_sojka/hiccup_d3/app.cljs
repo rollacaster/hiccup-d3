@@ -551,7 +551,7 @@
                [:ul.flex.flex-wrap
                 (map (fn [{:keys [fn doc-link]}]
                        [:li.rounded-full.px-3.py-1.text-white.mr-2.mb-2
-                        {:key fn :class (if doc-link "bg-gray-700" "bg-red-400")} [:a {:href doc-link :target "_blank"} fn]])
+                        {:key fn :class (if doc-link "bg-gray-700" "bg-red-400")} [:a {:href doc-link :target "_blank" :rel "noopener"} fn]])
                      d3-apis)]]]]
             [:div.flex.divide-x
              [:button.p-5.md:p-6.hover:bg-gray-100
