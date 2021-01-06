@@ -630,13 +630,14 @@
              [:div.pb-3
               [:h3.mb-2.text-sm.font-bold "Variants"]
               [:ul.flex.flex-wrap
-               (map-indexed
-                (fn [idx {:keys [title]}]
-                  [:li.text-white.mr-2.mb-2 {:key title}
-                   [:button.focus:outline-none.px-3.py-1.rounded-full.bg-gray-700.focus:ring
-                    {:on-click #(reset! active-variant idx)}
-                    title]])
-                chart-variants)]]
+               (doall
+                (map-indexed
+                 (fn [idx {:keys [title]}]
+                   [:li.mr-2.mb-2 {:key title :class (if (= idx @active-variant) "text-blue-300" "text-white")}
+                    [:button.px-3.py-1.rounded-full.bg-gray-700.focus:outline-none.focus:ring
+                     {:on-click #(reset! active-variant idx)}
+                     title]])
+                 chart-variants))]]
              (let [{:keys [d3-apis code chart]} (nth chart-variants @active-variant)]
                [:div
                 [:div
@@ -653,7 +654,7 @@
                   {:style {:height height}  :id (str "code" copy-id)}
                   (with-out-str (pprint code))]
                  [:div.flex.justify-center
-                  [:button.copy-button.font-bold.border.px-3
+                  [:button.copy-button.font-bold.border.px-3.focus:outline-none.focus:ring
                    {:data-clipboard-target (str "#code" copy-id)}
                    [:div.flex.items-center.justify-center
                     [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
@@ -666,33 +667,39 @@
                     (with-out-str (pprint @data))
                     (.stringify js/JSON @data nil 2))]
                  [:div.flex.justify-center
-                  [:button.copy-button.font-bold.border.px-3
+                  [:button.copy-button.font-bold.border.px-3.focus:outline-none.focus:ring
                    {:data-clipboard-target (str "#data" copy-id)}
                    [:div.flex.items-center.justify-center
-                    [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+                    [:div.w-4.h-4.mr-1
+                     [icon {:name :copy :class "text-gray-600"}]]
                     "copy"]]]]
                 [:div.pt-3
                  [:h3.mb-2.text-sm.font-bold.pl-3 "d3 APIs"]
                  [:ul.flex.flex-wrap
                   (map (fn [{:keys [fn doc-link]}]
-                         [:li.rounded-full.px-3.py-1.text-white.mr-2.mb-2
-                          {:key fn :class (if doc-link "bg-gray-700" "bg-red-400")} [:a {:href doc-link :target "_blank" :rel "noopener"} fn]])
+                         [:li.text-white.mr-2.mb-2.rounded-full
+                          {:key fn :class (if doc-link "bg-gray-700" "bg-red-400")}
+                          [:a.focus:outline-none.focus:ring.rounded-full.px-3.py-1.block
+                           {:href doc-link :target "_blank" :rel "noopener"} fn]])
                        d3-apis)]]])]
             [:div.flex.divide-x
-             [:button.p-5.md:p-6.hover:bg-gray-100
+             [:button.p-5.md:p-6.hover:bg-gray-100.focus:outline-none.focus:ring
               {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
               [:div.flex.items-center.justify-center
-               [:div.w-4.h-4.mr-1 [icon {:name :chart :class "text-gray-600"}]]
+               {:class (if (= @active-tab :chart) "text-blue-300" "text-gray-600")}
+               [:div.w-4.h-4.mr-1 [icon {:name :chart}]]
                "Chart"]]
-             [:button.p-5.md:p-6.hover:bg-gray-100
+             [:button.p-5.md:p-6.hover:bg-gray-100.focus:outline-none.focus:ring
               {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
               [:div.flex.items-center.justify-center
-               [:div.w-4.h-4.mr-1 [icon {:name :code :class "text-gray-600"}]]
+               {:class (if (= @active-tab :code) "text-blue-300" "text-gray-600")}
+               [:div.w-4.h-4.mr-1 [icon {:name :code}]]
                "Code"]]
-             [:button.p-5.md:p-6.hover:bg-gray-100
+             [:button.p-5.md:p-6.hover:bg-gray-100.focus:outline-none.focus:ring
               {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
               [:div.flex.items-center.justify-center
-               [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
+               {:class (if (= @active-tab :data) "text-blue-300" "text-gray-600")}
+               [:div.w-4.h-4.mr-1 [icon {:name :data}]]
                "Data"]]]]])))))
 
 (defn app []
