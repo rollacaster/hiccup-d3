@@ -51,5 +51,13 @@
       :data data#
       :d3-apis ~(mapv (fn [fn] {:doc-link (d3-doc-link fn) :fn fn})
                       (d3-fns code))
-      :chart (fn [] (~code @data#))
+      :chart (fn [data#]
+               (~code data#))
       :code  '~(last code)}))
+
+(defmacro variant [title code]
+  `{:title ~title
+    :d3-apis ~(mapv (fn [fn] {:doc-link (d3-doc-link fn) :fn fn}) (d3-fns code))
+    :code '~(last code)
+    :chart (fn [data#] (~code data#))})
+

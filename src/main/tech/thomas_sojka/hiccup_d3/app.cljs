@@ -48,41 +48,65 @@
      content-lines)))
 
 (def bar
-  (m/build-chart
-   {:load (fn []
-            (-> (fetch-json "data/frequencies.json")
-                (.then (fn [res] (js->clj res :keywordize-keys true)))))
-    :title "Bar Chart"
-    :code  (fn [data]
-             (let [size 400
-                   margin {:top 0 :right 0 :left 16 :bottom 0}
-                   x (-> (d3/scaleLinear)
-                         (.range (into-array [(:left margin) (- size (:right margin))]))
-                         (.domain (into-array [0 (apply max (map :frequency data))])))
-                   y (-> (d3/scaleBand)
-                         (.domain (into-array (map :letter data)))
-                         (.range (into-array [(:top margin) (- size (:bottom margin))])))
-                   color (d3/scaleOrdinal d3/schemeCategory10)]
-               [:svg {:viewBox (str "0 0 " size " " size)}
-                (map
-                 (fn [{:keys [letter frequency]}]
-                   [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
-                    [:rect {:x      (x 0)
-                            :height (.bandwidth y)
-                            :fill   (color letter)
-                            :width  (x frequency)}]])
-                 data)
-                (map
-                 (fn [{:keys [letter frequency]}]
-                   [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
-                    [:text {:x 20
-                            :y (+ (/ (.bandwidth y) 2) 1)
-                            :dominant-baseline "middle"}
-                     frequency]
-                    [:text.current-fill
-                     {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle"}
-                     letter]])
-                 data)]))}))
+  (let [data (r/atom nil)]
+    (-> (fetch-json "data/frequencies.json")
+        (.then (fn [res] (js->clj res :keywordize-keys true)))
+        (.then (fn [res#] (reset! data res#)))
+        (.catch (fn [e#] (prn e#))))
+    {:title "Bar Chart"
+     :data data
+     :chart-variants [(m/variant
+                       "plain"
+                       (fn [data]
+                         (let [size 400
+                               x (-> (d3/scaleLinear)
+                                     (.range (into-array [0 size]))
+                                     (.domain (into-array [0 (apply max (map :frequency data))])))
+                               y (-> (d3/scaleBand)
+                                     (.domain (into-array (map :letter data)))
+                                     (.range (into-array [0 size])))
+                               color (d3/scaleOrdinal d3/schemeCategory10)]
+                           [:svg {:viewBox (str "0 0 " size " " size)}
+                            (map
+                             (fn [{:keys [letter frequency]}]
+                               [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
+                                [:rect {:x      (x 0)
+                                        :height (.bandwidth y)
+                                        :fill   (color letter)
+                                        :width  (x frequency)}]])
+                             data)])))
+                      (m/variant
+                       "with labels"
+                       (fn [data]
+                         (let [size 400
+                               margin {:top 0 :right 0 :left 16 :bottom 0}
+                               x (-> (d3/scaleLinear)
+                                     (.range (into-array [(:left margin) (- size (:right margin))]))
+                                     (.domain (into-array [0 (apply max (map :frequency data))])))
+                               y (-> (d3/scaleBand)
+                                     (.domain (into-array (map :letter data)))
+                                     (.range (into-array [(:top margin) (- size (:bottom margin))])))
+                               color (d3/scaleOrdinal d3/schemeCategory10)]
+                           [:svg {:viewBox (str "0 0 " size " " size)}
+                            (map
+                             (fn [{:keys [letter frequency]}]
+                               [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
+                                [:rect {:x      (x 0)
+                                        :height (.bandwidth y)
+                                        :fill   (color letter)
+                                        :width  (x frequency)}]])
+                             data)
+                            (map
+                             (fn [{:keys [letter frequency]}]
+                               [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
+                                [:text {:x 20
+                                        :y (+ (/ (.bandwidth y) 2) 1)
+                                        :dominant-baseline "middle"}
+                                 frequency]
+                                [:text.current-fill
+                                 {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle"}
+                                 letter]])
+                             data)])))]}))
 
 (def pie
   (m/build-chart
@@ -570,6 +594,87 @@
                [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
                "Data"]]]]])))))
 
+(defn variants-chart-container []
+  (let [copy-id (random-uuid)]
+    (clipboard. ".copy-button")
+    (let [active-tab (r/atom :chart)
+          active-variant (r/atom 0)]
+      (fn [{:keys [title data chart-variants]}]
+        (let [height (- 393.08 42)]
+          [card
+           [:<>
+            [:div.p-6.md:pt-14.md:px-14.border-b
+             [:h2.text-3xl.font-semibold.tracking-wide.mb-3
+              title]
+             [:div.pb-3
+              [:h3.mb-2.text-sm.font-bold "Variants"]
+              [:ul.flex.flex-wrap
+               (map-indexed
+                (fn [idx {:keys [title]}]
+                  [:li.text-white.mr-2.mb-2 {:key title}
+                   [:button.focus:outline-none.px-3.py-1.rounded-full.bg-gray-700.focus:ring
+                    {:on-click #(reset! active-variant idx)}
+                    title]])
+                chart-variants)]]
+             (let [{:keys [d3-apis code chart]} (nth chart-variants @active-variant)]
+               [:div
+                [:div
+                 {:class
+                  (r/class-names (when-not (= @active-tab :chart) "hidden")
+                                 (when-not @data "flex justify-center items-center"))
+                  :style {:height 393}}
+                 (if @data
+                   [chart @data]
+                   [spinner])]
+                [:div
+                 {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
+                 [:pre.overflow-auto.mb-4
+                  {:style {:height height}  :id (str "code" copy-id)}
+                  (with-out-str (pprint code))]
+                 [:div.flex.justify-center
+                  [:button.copy-button.font-bold.border.px-3
+                   {:data-clipboard-target (str "#code" copy-id)}
+                   [:div.flex.items-center.justify-center
+                    [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+                    "copy"]]]]
+                [:div
+                 {:class (r/class-names (when-not (= @active-tab :data) "hidden"))}
+                 [:pre.overflow-auto.mb-4
+                  {:style {:height height} :id (str "data" copy-id)}
+                  (if (coll? @data)
+                    (with-out-str (pprint @data))
+                    (.stringify js/JSON @data nil 2))]
+                 [:div.flex.justify-center
+                  [:button.copy-button.font-bold.border.px-3
+                   {:data-clipboard-target (str "#data" copy-id)}
+                   [:div.flex.items-center.justify-center
+                    [:div.w-4.h-4.mr-1 [icon {:name :copy :class "text-gray-600"}]]
+                    "copy"]]]]
+                [:div.pt-3
+                 [:h3.mb-2.text-sm.font-bold.pl-3 "d3 APIs"]
+                 [:ul.flex.flex-wrap
+                  (map (fn [{:keys [fn doc-link]}]
+                         [:li.rounded-full.px-3.py-1.text-white.mr-2.mb-2
+                          {:key fn :class (if doc-link "bg-gray-700" "bg-red-400")} [:a {:href doc-link :target "_blank" :rel "noopener"} fn]])
+                       d3-apis)]]])
+             chart-variants]
+            [:div.flex.divide-x
+             [:button.p-5.md:p-6.hover:bg-gray-100
+              {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
+              [:div.flex.items-center.justify-center
+               [:div.w-4.h-4.mr-1 [icon {:name :chart :class "text-gray-600"}]]
+               "Chart"]]
+             [:button.p-5.md:p-6.hover:bg-gray-100
+              {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
+              [:div.flex.items-center.justify-center
+               [:div.w-4.h-4.mr-1 [icon {:name :code :class "text-gray-600"}]]
+               "Code"]]
+             [:button.p-5.md:p-6.hover:bg-gray-100
+              {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
+              [:div.flex.items-center.justify-center
+               [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
+               "Data"]]]]])))))
+
 (defn app []
   [:div.text-gray-900.flex.flex-col.h-screen
    [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
@@ -588,7 +693,7 @@
         [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
    [:div.flex-1
     [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
-     [chart-container bar]
+     [variants-chart-container bar]
      [chart-container pie]
      [chart-container pack]
      [chart-container tree]
