@@ -48,98 +48,115 @@
      content-lines)))
 
 (def bar
-  (let [data (r/atom nil)]
-    (-> (fetch-json "data/frequencies.json")
-        (.then (fn [res] (js->clj res :keywordize-keys true)))
-        (.then (fn [res#] (reset! data res#)))
-        (.catch (fn [e#] (prn e#))))
-    {:title "Bar Chart"
-     :data data
-     :chart-variants [(m/variant
-                       "plain"
-                       (fn [data]
-                         (let [size 400
-                               x (-> (d3/scaleLinear)
-                                     (.range (into-array [0 size]))
-                                     (.domain (into-array [0 (apply max (map :frequency data))])))
-                               y (-> (d3/scaleBand)
-                                     (.domain (into-array (map :letter data)))
-                                     (.range (into-array [0 size])))
-                               color (d3/scaleOrdinal d3/schemeCategory10)]
-                           [:svg {:viewBox (str "0 0 " size " " size)}
-                            (map
-                             (fn [{:keys [letter frequency]}]
-                               [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
-                                [:rect {:x      (x 0)
-                                        :height (.bandwidth y)
-                                        :fill   (color letter)
-                                        :width  (x frequency)}]])
-                             data)])))
-                      (m/variant
-                       "with labels"
-                       (fn [data]
-                         (let [size 400
-                               margin {:top 0 :right 0 :left 16 :bottom 0}
-                               x (-> (d3/scaleLinear)
-                                     (.range (into-array [(:left margin) (- size (:right margin))]))
-                                     (.domain (into-array [0 (apply max (map :frequency data))])))
-                               y (-> (d3/scaleBand)
-                                     (.domain (into-array (map :letter data)))
-                                     (.range (into-array [(:top margin) (- size (:bottom margin))])))
-                               color (d3/scaleOrdinal d3/schemeCategory10)]
-                           [:svg {:viewBox (str "0 0 " size " " size)}
-                            (map
-                             (fn [{:keys [letter frequency]}]
-                               [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
-                                [:rect {:x      (x 0)
-                                        :height (.bandwidth y)
-                                        :fill   (color letter)
-                                        :width  (x frequency)}]])
-                             data)
-                            (map
-                             (fn [{:keys [letter frequency]}]
-                               [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
-                                [:text {:x 20
-                                        :y (+ (/ (.bandwidth y) 2) 1)
-                                        :dominant-baseline "middle"}
-                                 frequency]
-                                [:text.current-fill
-                                 {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle"}
-                                 letter]])
-                             data)])))]}))
+  {:title "Bar Chart"
+   :load (fn []
+           (-> (fetch-json "data/frequencies.json")
+               (.then (fn [res] (js->clj res :keywordize-keys true)))))
+   :chart-variants [(m/variant
+                     "plain"
+                     (fn [data]
+                       (let [size 400
+                             x (-> (d3/scaleLinear)
+                                   (.range (into-array [0 size]))
+                                   (.domain (into-array [0 (apply max (map :frequency data))])))
+                             y (-> (d3/scaleBand)
+                                   (.domain (into-array (map :letter data)))
+                                   (.range (into-array [0 size])))
+                             color (d3/scaleOrdinal d3/schemeCategory10)]
+                         [:svg {:viewBox (str "0 0 " size " " size)}
+                          (map
+                           (fn [{:keys [letter frequency]}]
+                             [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
+                              [:rect {:x      (x 0)
+                                      :height (.bandwidth y)
+                                      :fill   (color letter)
+                                      :width  (x frequency)}]])
+                           data)])))
+                    (m/variant
+                     "with labels"
+                     (fn [data]
+                       (let [size 400
+                             margin {:top 0 :right 0 :left 16 :bottom 0}
+                             x (-> (d3/scaleLinear)
+                                   (.range (into-array [(:left margin) (- size (:right margin))]))
+                                   (.domain (into-array [0 (apply max (map :frequency data))])))
+                             y (-> (d3/scaleBand)
+                                   (.domain (into-array (map :letter data)))
+                                   (.range (into-array [(:top margin) (- size (:bottom margin))])))
+                             color (d3/scaleOrdinal d3/schemeCategory10)]
+                         [:svg {:viewBox (str "0 0 " size " " size)}
+                          (map
+                           (fn [{:keys [letter frequency]}]
+                             [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
+                              [:rect {:x      (x 0)
+                                      :height (.bandwidth y)
+                                      :fill   (color letter)
+                                      :width  (x frequency)}]])
+                           data)
+                          (map
+                           (fn [{:keys [letter frequency]}]
+                             [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
+                              [:text {:x 20
+                                      :y (+ (/ (.bandwidth y) 2) 1)
+                                      :dominant-baseline "middle"}
+                               frequency]
+                              [:text.current-fill
+                               {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle"}
+                               letter]])
+                           data)])))]})
 
 (def pie
-  (m/build-chart
-   {:title "Pie Chart"
-    :load  (fn []
-             (-> (fetch-json "data/population-by-age.json")
-                 (.then (fn [res] (reset! (:data pie) (js->clj res :keywordize-keys true))))))
-    :code  (fn [data]
-             (let [size 300
-                   pie (-> (d3/pie)
-                           (.sort nil)
-                           (.value #(:value %)))
-                   arc (-> (d3/arc)
-                           (.innerRadius 0)
-                           (.outerRadius (/ size 2)))
-                   arc-label (let [r (* (/ size 2) 0.8)]
-                               (-> (d3/arc)
-                                   (.innerRadius r)
-                                   (.outerRadius r)))
-                   color (d3/scaleOrdinal d3/schemeCategory10)
-                   arcs (pie data)]
-               [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
-                (map
-                 (fn [pie-arc]
-                   [:g {:key (.-index pie-arc)}
-                    [:path {:d (arc pie-arc) :fill (color (.-index pie-arc))}]
-                    (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.3)
-                      [:text
-                       {:transform (str "translate(" (.centroid arc-label pie-arc) ")")
-                        :text-anchor "middle"
-                        :dominant-baseline "middle"}
-                       (:name (.-data pie-arc))])])
-                 arcs)]))}))
+  {:title "Pie Chart"
+   :load  (fn []
+            (-> (fetch-json "data/population-by-age.json")
+                (.then (fn [res] (js->clj res :keywordize-keys true)))))
+   :chart-variants
+   [(m/variant
+     "plain"
+     (fn [data]
+       (let [size 300
+             pie (-> (d3/pie)
+                     (.sort nil)
+                     (.value #(:value %)))
+             arc (-> (d3/arc)
+                     (.innerRadius 0)
+                     (.outerRadius (/ size 2)))
+             color (d3/scaleOrdinal d3/schemeCategory10)
+             arcs (pie data)]
+         [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+          (map
+           (fn [pie-arc]
+             [:g {:key (.-index pie-arc)}
+              [:path {:d (arc pie-arc) :fill (color (.-index pie-arc))}]])
+           arcs)])))
+    (m/variant
+     "with labels"
+     (fn [data]
+       (let [size 300
+             pie (-> (d3/pie)
+                     (.sort nil)
+                     (.value #(:value %)))
+             arc (-> (d3/arc)
+                     (.innerRadius 0)
+                     (.outerRadius (/ size 2)))
+             arc-label (let [r (* (/ size 2) 0.8)]
+                         (-> (d3/arc)
+                             (.innerRadius r)
+                             (.outerRadius r)))
+             color (d3/scaleOrdinal d3/schemeCategory10)
+             arcs (pie data)]
+         [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
+          (map
+           (fn [pie-arc]
+             [:g {:key (.-index pie-arc)}
+              [:path {:d (arc pie-arc) :fill (color (.-index pie-arc))}]
+              (when (> (- ^js (.-endAngle pie-arc) ^js (.-startAngle pie-arc)) 0.3)
+                [:text
+                 {:transform (str "translate(" (.centroid arc-label pie-arc) ")")
+                  :text-anchor "middle"
+                  :dominant-baseline "middle"}
+                 (:name (.-data pie-arc))])])
+           arcs)])))]})
 
 (def line
   (m/build-chart
@@ -594,12 +611,16 @@
                [:div.w-4.h-4.mr-1 [icon {:name :data :class "text-gray-600"}]]
                "Data"]]]]])))))
 
-(defn variants-chart-container []
-  (let [copy-id (random-uuid)]
+(defn variants-chart-container [{:keys [load]}]
+  (let [copy-id (random-uuid)
+        data (r/atom nil)]
+    (-> (load)
+        (.then (fn [res] (reset! data res)))
+        (.catch (fn [e] (prn e))))
     (clipboard. ".copy-button")
     (let [active-tab (r/atom :chart)
           active-variant (r/atom 0)]
-      (fn [{:keys [title data chart-variants]}]
+      (fn [{:keys [title chart-variants]}]
         (let [height (- 393.08 42)]
           [card
            [:<>
@@ -656,8 +677,7 @@
                   (map (fn [{:keys [fn doc-link]}]
                          [:li.rounded-full.px-3.py-1.text-white.mr-2.mb-2
                           {:key fn :class (if doc-link "bg-gray-700" "bg-red-400")} [:a {:href doc-link :target "_blank" :rel "noopener"} fn]])
-                       d3-apis)]]])
-             chart-variants]
+                       d3-apis)]]])]
             [:div.flex.divide-x
              [:button.p-5.md:p-6.hover:bg-gray-100
               {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
@@ -694,7 +714,7 @@
    [:div.flex-1
     [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
      [variants-chart-container bar]
-     [chart-container pie]
+     [variants-chart-container pie]
      [chart-container pack]
      [chart-container tree]
      [chart-container world-map]
