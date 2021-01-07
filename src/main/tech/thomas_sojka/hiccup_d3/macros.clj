@@ -42,20 +42,7 @@
      code)
     (set @d3-calls)))
 
-(defmacro build-chart [{:keys [title code load]}]
-  `(let [data# (r/atom nil)]
-     (-> (~load)
-         (.then (fn [res#] (reset! data# res#)))
-         (.catch (fn [e#] (prn e#))))
-     {:title ~title
-      :data data#
-      :d3-apis ~(mapv (fn [fn] {:doc-link (d3-doc-link fn) :fn fn})
-                      (d3-fns code))
-      :chart (fn [data#]
-               (~code data#))
-      :code  '~(last code)}))
-
-(defmacro variant [title code]
+(defmacro build-chart [title code]
   `{:title ~title
     :d3-apis ~(mapv (fn [fn] {:doc-link (d3-doc-link fn) :fn fn}) (d3-fns code))
     :code '~(last code)
