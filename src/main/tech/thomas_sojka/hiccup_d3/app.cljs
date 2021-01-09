@@ -118,7 +118,7 @@
        (let [size 300
              pie (-> (d3/pie)
                      (.sort nil)
-                     (.value #(:value %)))
+                     (.value (fn [d] (:value d))))
              arc (-> (d3/arc)
                      (.innerRadius 0)
                      (.outerRadius (/ size 2)))
@@ -136,7 +136,7 @@
        (let [size 300
              pie (-> (d3/pie)
                      (.sort nil)
-                     (.value #(:value %)))
+                     (.value (fn [d] (:value d))))
              arc (-> (d3/arc)
                      (.innerRadius 0)
                      (.outerRadius (/ size 2)))
@@ -183,8 +183,8 @@
                    (.domain (into-array [0 (apply max values)]))
                    (.range (into-array [size 0])))
              line (-> (d3/line)
-                      (.x #(x (:date %)))
-                      (.y #(y (:close %))))]
+                      (.x (fn [d] (x (:date d))))
+                      (.y (fn [d] (y (:close d)))))]
          [:svg {:viewBox (str 0 " " 0 " " size " " size)}
           [:path {:d      (line data)
                   :fill   "transparent"
@@ -203,8 +203,8 @@
              root ((-> (d3/pack)
                        (.size (into-array [(- size margin) (- size margin)])))
                    (-> (d3/hierarchy data)
-                       (.sum #(.-value %))
-                       (.sort #(- (.-value %2) (.-value %1)))))]
+                       (.sum (fn [d] (.-value d)))
+                       (.sort (fn [a b] (- (.-value b) (.-value a))))))]
          [:svg {:viewBox (str 0 " " 0 " " size " " size)}
           [:filter {:id "dropshadow" :filterUnits "userSpaceOnUse"}
            [:feGaussianBlur {:in "SourceAlpha" :stdDeviation "3"}]
@@ -233,8 +233,8 @@
                        (.size (into-array [(- size (* 2 r)) (- size (* 2 r))])))
                    (-> (d3/hierarchy data)))
              draw-link (-> (d3/linkVertical)
-                           (.x #(.-x %))
-                           (.y #(.-y %)))]
+                           (.x (fn [d] (.-x d)))
+                           (.y (fn [d] (.-y d))))]
          [:svg {:viewBox (str (- r) " " (- r) " " size " " size)}
           [:g
            (map
@@ -294,13 +294,14 @@
      (fn [data]
        (let [size 300
              color (d3/scaleOrdinal d3/schemeCategory10)
-             links->nodes #(->> %
-                                (mapcat (fn [{:keys [source target]}] [source target]))
-                                distinct
-                                (map (fn [name] {:name name :category (str/replace name #" .*" "")})))
-             data (clj->js {:links data :nodes (links->nodes data)})
+             nodes (fn [links]
+                     (->> links
+                          (mapcat (fn [{:keys [source target]}] [source target]))
+                          distinct
+                          (map (fn [name] {:name name :category (str/replace name #" .*" "")}))))
+             data (clj->js {:links data :nodes (nodes data)})
              compute-sankey (-> (d3-sankey/sankey)
-                                (.nodeId #(.-name %))
+                                (.nodeId (fn [d] (.-name d)))
                                 (.size (into-array [size size])))
              sankey-data (compute-sankey data)]
          [:svg {:viewBox (str "0 0 " size " " size)}
@@ -334,7 +335,7 @@
        (let [size 600]
          (-> (d3/forceSimulation (.-nodes data))
              (.force "link" (-> (d3/forceLink (.-links data))
-                                (.id #(.-id %))))
+                                (.id (fn [d] (.-id d)))))
              (.force "charge" (d3/forceManyBody))
              (.force "center" (d3/forceCenter (/ size 2) (/ size 2)))
              .stop
@@ -367,17 +368,17 @@
      (fn [data]
        (let [size 300
              arc (-> (d3/arc)
-                     (.startAngle #(.-x0 %))
-                     (.endAngle #(.-x1 %))
-                     (.innerRadius #(.-y0 %))
-                     (.outerRadius #(- (.-y1 %) 1)))
+                     (.startAngle (fn [d] (.-x0 d)))
+                     (.endAngle (fn [d] (.-x1 d)))
+                     (.innerRadius (fn [d] (.-y0 d)))
+                     (.outerRadius (fn [d] (- (.-y1 d) 1))))
              radius (/ size 2)
              color (d3/scaleOrdinal d3/schemeCategory10)
              partition ((-> (d3/partition)
                             (.size (into-array [(* 2 js/Math.PI) radius])))
                         (-> (d3/hierarchy data)
-                            (.sum #(.-value %))
-                            (.sort #(- (.-value %2) (.-value %1)))))]
+                            (.sum (fn [d] (.-value d)))
+                            (.sort (fn [a b] (- (.-value b) (.-value a))))))]
          [:svg {:viewBox (str (- (/ size 2)) " " (- (/ size 2)) " " size " " size)}
           [:g
            (map
@@ -400,8 +401,8 @@
                        (.tile d3/treemapBinary)
                        (.size (into-array [size size])))
                    (-> (d3/hierarchy data)
-                       (.sum #(.-value %))
-                       (.sort #(- (.-value %2) (.-value %1)))))]
+                       (.sum (fn [d] (.-value d)))
+                       (.sort (fn [a b] (- (.-value b) (.-value a))))))]
          [:svg {:viewBox (str 0 " " 0 " " size " " size)}
           [:g
            (->> (.leaves root)
@@ -494,7 +495,7 @@
      (fn [data]
        (let [size 300
              delaunay (.from d3/Delaunay (clj->js data))
-             voronoi (.voronoi delaunay #js[0 0 size size])]
+             voronoi (.voronoi delaunay (into-array [0 0 size size]))]
          [:svg {:viewBox (str 0 " " 0 " " size " " size)}
           [:path {:fill "transparent"
                   :stroke "black"
@@ -540,8 +541,8 @@
              y (-> (d3/scaleLinear)
                    (.domain
                     (into-array
-                     [(apply min (map #(apply min (map first %)) series))
-                      (apply max (map #(apply max (map last %)) series))]))
+                     [(apply min (map (fn [d] (apply min (map first d))) series))
+                      (apply max (map (fn [d] (apply max (map last d))) series))]))
                    (.range (into-array [0 size])))
              area (-> (d3/area)
                       (.x (fn [d] (x ^js (.-data.date d))))
