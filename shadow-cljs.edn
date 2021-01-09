@@ -6,7 +6,8 @@
 
  :dependencies
  [[reagent "0.10.0"]
-  [markdown-to-hiccup "0.6.2"]]
+  [markdown-to-hiccup "0.6.2"]
+  [venantius/glow "0.1.6"]]
  :dev-http {8080 "public"}
  :builds
  {:frontend

@@ -1,6 +1,8 @@
 (ns tech.thomas-sojka.hiccup-d3.macros
-  (:require [clojure.string :as str]
+  (:require [clojure.pprint :refer [pprint]]
+            [clojure.string :as str]
             [clojure.walk :as walk]
+            [glow.core :as glow]
             [markdown-to-hiccup.core :as m]))
 
 (def doc-hiccup
@@ -46,5 +48,28 @@
   `{:title ~title
     :d3-apis ~(mapv (fn [fn] {:doc-link (d3-doc-link fn) :fn fn}) (d3-fns code))
     :code '~(last code)
+    :code-formatted ~(glow/highlight-html (with-out-str (pprint (last code))))
     :chart (fn [data#] (~code data#))})
+
+(spit "public/css/glow.css" (glow/generate-css
+                             {:background "white"
+                              :exception "#859900"
+                              :repeat "#859900"
+                              :conditional "#859900"
+                              :variable "#268bd2"
+                              :core-fn "#586e75"
+                              :definition "#cb4b16"
+                              :reader-char "#dc322f"
+                              :special-form "#859900"
+                              :macro "#859900"
+                              :number "#2aa198"
+                              :boolean "#2aa198"
+                              :nil "#2aa198"
+                              :s-exp "#586e75"
+                              :keyword "#268bd2"
+                              :comment "#586e75"
+                              :string "#2aa198"
+                              :character "#2aa198"
+                              :regex "#dc322f"
+                              :symbol "#586e75"}))
 

@@ -587,7 +587,7 @@
                        {:on-click #(reset! active-variant idx)}
                        title]])
                    charts))]])
-             (let [{:keys [d3-apis code chart]} (nth charts @active-variant)]
+             (let [{:keys [d3-apis code chart code-formatted]} (nth charts @active-variant)]
                [:div
                 [:div
                  {:class
@@ -601,7 +601,7 @@
                  {:class (r/class-names (when-not (= @active-tab :code) "hidden"))}
                  [:pre.overflow-auto.mb-4
                   {:style {:height height}  :id (str "code" copy-id)}
-                  (with-out-str (pprint code))]
+                  [:div {:dangerouslySetInnerHTML {:__html code-formatted}}]]
                  [:div.flex.justify-center
                   [:button.copy-button.font-bold.border.px-3.focus:outline-none.focus:ring
                    {:data-clipboard-target (str "#code" copy-id)}
