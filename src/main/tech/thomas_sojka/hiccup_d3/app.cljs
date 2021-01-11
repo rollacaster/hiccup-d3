@@ -34,6 +34,16 @@
       (.then (fn [res] (.json res)))
       (.catch (fn [res] (prn res)))))
 
+(defn get-screen-size  []
+  (condp #(< %2 %1) js/window.screen.width
+    640 "sm"
+    768 "md"
+    1024 "lg"
+    1280 "xl"
+    "2xl"))
+
+(def screen-size (r/atom (get-screen-size)))
+
 (defn csv->clj
   [csv]
   (let [[header-line & content-lines] (str/split-lines csv)
@@ -260,23 +270,18 @@
    [(m/build-chart
      "plain"
      (fn [data]
-       (let [size 393
-             color (d3/scaleOrdinal d3/schemeCategory10)
+       (let [color (d3/scaleOrdinal d3/schemeCategory10)
              path (-> (d3/geoPath)
                       (.projection (d3/geoMercator)))]
-         [:div {:style {:height size
-                        :display "flex"
-                        :flex-direction  "column"
-                        :justify-content "center"}}
-          [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
-           [:g {:transform (str "translate(" 0 ", " 200 ")")}
-            (map
-             (fn [country]
-               (let [country-name ^js (.-properties.abbrev country)]
-                 [:path {:key country-name
-                         :d (path country)
-                         :fill (color country-name)}]))
-             ^js (.-features data))]]])))]})
+         [:svg {:viewBox (str 0 " " 0 " " 1000 " " 650)}
+          [:g {:transform (str "translate(" 0 ", " 200 ")")}
+           (map
+            (fn [country]
+              (let [country-name ^js (.-properties.abbrev country)]
+                [:path {:key country-name
+                        :d (path country)
+                        :fill (color country-name)}]))
+            ^js (.-features data))]])))]})
 
 (def sankey
   {:title "Sankey"
@@ -475,16 +480,14 @@
              height (.-height data)
              contours (-> (d3/contours)
                           (.size (into-array [width height])))]
-         [:div
-          {:style {:height 399}}
-          [:svg {:viewBox (str 0 " " 0 " " width " " height)}
-           [:g
-            (map
-             (fn [threshold]
-               [:path {:key threshold
-                       :d (path (.contour contours (.-values data) threshold))
-                       :fill (color threshold)}])
-             thresholds)]]])))]})
+         [:svg {:viewBox (str 0 " " 0 " " width " " height)}
+          [:g
+           (map
+            (fn [threshold]
+              [:path {:key threshold
+                      :d (path (.contour contours (.-values data) threshold))
+                      :fill (color threshold)}])
+            thresholds)]])))]})
 
 (def voronoi
   {:title "Voronoi"
@@ -557,7 +560,7 @@
            series)])))]})
 
 (defn card [children]
-  [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.md:mr-16.md:mb-16 {:class "md:w-5/12"}
+  [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.lg:mr-16.md:mb-2.lg:mb-16 {:class "md:w-1/2 lg:w-5/12"}
    children])
 
 (defn chart-container [{:keys [load]}]
@@ -570,10 +573,12 @@
     (let [active-tab (r/atom :chart)
           active-variant (r/atom 0)]
       (fn [{:keys [title charts]}]
-        (let [height (- 393.08 42)]
+        (let [chart-height (if (#{"sm" "md" "lg"} @screen-size) "auto" 399)
+              height (if (#{"sm" "md" "lg"} @screen-size) "auto" (- chart-height 42))]
           [card
            [:<>
             [:div.p-6.md:pt-14.md:px-14.border-b
+             {:style {:height "calc(100% - 72px)"}}
              [:h2.text-3xl.font-semibold.tracking-wide.mb-3
               title]
              (when (> (count charts) 1)
@@ -594,7 +599,7 @@
                  {:class
                   (r/class-names (when-not (= @active-tab :chart) "hidden")
                                  (when-not @data "flex justify-center items-center"))
-                  :style {:height 393}}
+                  :style {:height chart-height}}
                  (if @data
                    [chart @data]
                    [spinner])]
@@ -653,39 +658,42 @@
                "Data"]]]]])))))
 
 (defn app []
-  [:div.text-gray-900.flex.flex-col.h-screen
-   [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
-    [:div.px-6.py-4.max-w-7xl.mx-auto
-     [:h1.text-xl.font-bold.text-white
-      [:a {:href "https://rollacaster.github.io/hiccup-d3/"} "hiccup-d3"]]
-     [:div.text-white.py-12.flex
-      [:div.text-4xl {:class "lg:w-1/2"}
-       [:div.max-w-md
-        "Ready-made ClojureScript examples for D3"]]
-      [:div.text-lg.hidden.md:block {:class "w-1/2"}
-       [:div.max-w-md
-        "Transforming D3 code to ClojureScript is complex. Use these starting points to create a new chart with "
-        [:a.underline {:href "https://github.com/weavejester/hiccup"} "hiccup"]
-        ". No functionality was wrapped, access the full "
-        [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
-   [:div.flex-1
-    [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
-     [chart-container bar]
-     [chart-container pie]
-     [chart-container pack]
-     [chart-container tree]
-     [chart-container world-map]
-     [chart-container sankey]
-     [chart-container sunburst]
-     [chart-container graph]
-     [chart-container line]
-     [chart-container treemap]
-     [chart-container chord]
-     [chart-container contour]
-     [chart-container voronoi]
-     [chart-container streamgraph]]]
-   [:footer.bg-gray-800.flex.justify-center.py-2
-    [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]])
+  (r/with-let [_ (js/window.addEventListener "resize" (fn [] (reset! screen-size (get-screen-size))))]
+    [:div.text-gray-900.flex.flex-col.h-screen
+     [:header.border-b.bg-gradient-to-b.from-gray-600.to-gray-900
+      [:div.px-6.py-4.max-w-7xl.mx-auto
+       [:h1.text-xl.font-bold.text-white
+        [:a {:href "https://rollacaster.github.io/hiccup-d3/"} "hiccup-d3"]]
+       [:div.text-white.py-12.flex
+        [:div.text-4xl {:class "lg:w-1/2"}
+         [:div.max-w-md
+          "Ready-made ClojureScript examples for D3"]]
+        [:div.text-lg.hidden.md:block {:class "w-1/2"}
+         [:div.max-w-md
+          "Transforming D3 code to ClojureScript is complex. Use these starting points to create a new chart with "
+          [:a.underline {:href "https://github.com/weavejester/hiccup"} "hiccup"]
+          ". No functionality was wrapped, access the full "
+          [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
+     [:div.flex-1
+      [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
+       [chart-container bar]
+       [chart-container pie]
+       [chart-container pack]
+       [chart-container tree]
+       [chart-container world-map]
+       [chart-container sankey]
+       [chart-container sunburst]
+       [chart-container graph]
+       [chart-container line]
+       [chart-container treemap]
+       [chart-container chord]
+       [chart-container contour]
+       [chart-container voronoi]
+       [chart-container streamgraph]]]
+     [:footer.bg-gray-800.flex.justify-center.py-2
+      [:a.text-white.underline {:href "https://github.com/rollacaster/hiccup-d3"} "Code"]]]
+    (finally
+      (js/document.removeEventListener "resize" get-screen-size))))
 
 (dom/render [app] (js/document.getElementById "root"))
 
