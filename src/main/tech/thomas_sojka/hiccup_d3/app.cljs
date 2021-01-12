@@ -150,13 +150,15 @@
        [:div.text-white.py-12.flex
         [:div.text-4xl {:class "lg:w-1/2"}
          [:div.max-w-md
-          "Ready-made ClojureScript examples for D3"]]
+          "Hiccup D3-Charts in ClojureScript"]]
         [:div.text-lg.hidden.md:block {:class "w-1/2"}
          [:div.max-w-md
-          "Transforming D3 code to ClojureScript is complex. Use these starting points to create a new chart with "
+          "Use these starting points to create a new chart with "
           [:a.underline {:href "https://github.com/weavejester/hiccup"} "hiccup"]
           ". No functionality was wrapped, access the full "
-          [:a.underline {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] "."]]]]]
+          [:a.underline
+           {:href "https://github.com/d3/d3/blob/master/API.md"} "D3 API"] ". The
+          example code assumes D3 is already required."]]]]]
      [:div.flex-1
       [:div.max-w-7xl.mx-auto.py-2.md:p-6.flex.flex-wrap
        [chart-container bar]
