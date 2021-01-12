@@ -54,7 +54,7 @@
          arcs)]))))
 
 (def pie
-  {:title "Pie Chart"
+  {:title "Pie"
    :load (fn []
            (-> (fetch-json "data/population-by-age.json")
                (.then (fn [res] (js->clj res :keywordize-keys true)))))

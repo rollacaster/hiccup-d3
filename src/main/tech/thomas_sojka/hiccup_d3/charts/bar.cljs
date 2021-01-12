@@ -60,7 +60,7 @@
          data)]))))
 
 (def bar
-  {:title "Bar Chart"
+  {:title "Bar"
    :load (fn []
            (-> (fetch-json "data/frequencies.json")
                (.then (fn [res] (js->clj res :keywordize-keys true)))))

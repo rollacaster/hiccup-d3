@@ -8,6 +8,7 @@
             [reagent.dom :as dom]
             [tech.thomas-sojka.hiccup-d3.charts.bar :refer [bar]]
             [tech.thomas-sojka.hiccup-d3.charts.pie :refer [pie]]
+            [tech.thomas-sojka.hiccup-d3.charts.pack :refer [pack]]
             [tech.thomas-sojka.hiccup-d3.utils :refer [fetch-json]])
   (:require-macros [tech.thomas-sojka.hiccup-d3.macros :as m]))
 
@@ -85,36 +86,6 @@
           [:path {:d      (line data)
                   :fill   "transparent"
                   :stroke (first d3/schemeCategory10)}]])))]})
-
-(def pack
-  {:title "Circle Packing"
-   :load  (fn [] (-> (fetch-json "data/flare-2.json")))
-   :charts
-   [(m/build-chart
-     "plain"
-     (fn [data]
-       (let [size 300
-             color (d3/scaleOrdinal d3/schemeCategory10)
-             margin 7
-             root ((-> (d3/pack)
-                       (.size (into-array [(- size margin) (- size margin)])))
-                   (-> (d3/hierarchy data)
-                       (.sum (fn [d] (.-value d)))
-                       (.sort (fn [a b] (- (.-value b) (.-value a))))))]
-         [:svg {:viewBox (str 0 " " 0 " " size " " size)}
-          [:filter {:id "dropshadow" :filterUnits "userSpaceOnUse"}
-           [:feGaussianBlur {:in "SourceAlpha" :stdDeviation "3"}]
-           [:feOffset {:dx (/ margin 2) :dy (/ margin 2)}]
-           [:feMerge
-            [:feMergeNode]
-            [:feMergeNode {:in "SourceGraphic"}]]]
-          (map
-           (fn [node]
-             [:circle {:key ^js (.-data.name node)
-                       :cx (.-x node) :cy (.-y node) :r (.-r node)
-                       :fill (color (.-height node))
-                       :filter "url(#dropshadow)"}])
-           (.descendants root))])))]})
 
 (def tree
   {:title "Tree"
