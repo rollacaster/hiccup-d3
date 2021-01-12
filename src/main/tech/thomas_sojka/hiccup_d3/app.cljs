@@ -117,7 +117,7 @@
                  [:pre.overflow-auto.mb-4
                   {:style {:height height} :id (str "data" copy-id)}
                   (if (coll? @data)
-                    (with-out-str (pprint @data))
+                    (with-out-str (pprint (vec @data)))
                     (.stringify js/JSON @data nil 2))]
                  [:div.flex.justify-center
                   [:button.copy-button.font-bold.border.px-3.focus:outline-none.focus:ring
