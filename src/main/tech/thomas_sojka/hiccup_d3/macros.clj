@@ -47,7 +47,6 @@
 (defmacro build-chart [title code]
   `{:title ~title
     :d3-apis ~(mapv (fn [fn] {:doc-link (d3-doc-link fn) :fn fn}) (d3-fns code))
-    :code '~(last code)
     :code-formatted ~(glow/highlight-html (with-out-str (pprint (last code))))
     :chart (fn [data#] (~code data#))})
 

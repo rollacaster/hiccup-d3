@@ -593,7 +593,7 @@
                        {:on-click #(reset! active-variant idx)}
                        title]])
                    charts))]])
-             (let [{:keys [d3-apis code chart code-formatted]} (nth charts @active-variant)]
+             (let [{:keys [d3-apis chart code-formatted]} (nth charts @active-variant)]
                [:div
                 [:div
                  {:class
