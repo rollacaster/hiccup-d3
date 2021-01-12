@@ -1,11 +1,13 @@
 (ns tech.thomas-sojka.hiccup-d3.app
-  (:require ["d3" :as d3]
+  (:require ["clipboard" :as clipboard]
+            ["d3" :as d3]
             ["d3-sankey" :as d3-sankey]
             [cljs.pprint :refer [pprint]]
             [clojure.string :as str]
             [reagent.core :as r]
             [reagent.dom :as dom]
-            ["clipboard" :as clipboard])
+            [tech.thomas-sojka.hiccup-d3.charts.bar :refer [bar]]
+            [tech.thomas-sojka.hiccup-d3.utils :refer [fetch-json]])
   (:require-macros [tech.thomas-sojka.hiccup-d3.macros :as m]))
 
 (defn icon [{:keys [name class]}]
@@ -29,11 +31,6 @@
      [:circle {:fill "#1F2937" :cx "36" :cy "18" :r "1"}
       [:animateTransform {:attributeName "transform" :type "rotate" :from "0 18 18" :to "360 18 18" :dur "0.9s" :repeatCount "indefinite"}]]]]])
 
-(defn fetch-json [url]
-  (-> (js/fetch url)
-      (.then (fn [res] (.json res)))
-      (.catch (fn [res] (prn res)))))
-
 (defn get-screen-size  []
   (condp #(< %2 %1) js/window.screen.width
     640 "sm"
@@ -56,65 +53,6 @@
      (fn [line]
        (zipmap headers (str/split line ",")))
      content-lines)))
-
-(def bar
-  {:title "Bar Chart"
-   :load (fn []
-           (-> (fetch-json "data/frequencies.json")
-               (.then (fn [res] (js->clj res :keywordize-keys true)))))
-   :charts
-   [(m/build-chart
-     "plain"
-     (fn [data]
-       (let [size 400
-             x (-> (d3/scaleLinear)
-                   (.range (into-array [0 size]))
-                   (.domain (into-array [0 (apply max (map :frequency data))])))
-             y (-> (d3/scaleBand)
-                   (.domain (into-array (map :letter data)))
-                   (.range (into-array [0 size])))
-             color (d3/scaleOrdinal d3/schemeCategory10)]
-         [:svg {:viewBox (str "0 0 " size " " size)}
-          (map
-           (fn [{:keys [letter frequency]}]
-             [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
-              [:rect {:x      (x 0)
-                      :height (.bandwidth y)
-                      :fill   (color letter)
-                      :width  (x frequency)}]])
-           data)])))
-    (m/build-chart
-     "with labels"
-     (fn [data]
-       (let [size 400
-             margin {:top 0 :right 0 :left 16 :bottom 0}
-             x (-> (d3/scaleLinear)
-                   (.range (into-array [(:left margin) (- size (:right margin))]))
-                   (.domain (into-array [0 (apply max (map :frequency data))])))
-             y (-> (d3/scaleBand)
-                   (.domain (into-array (map :letter data)))
-                   (.range (into-array [(:top margin) (- size (:bottom margin))])))
-             color (d3/scaleOrdinal d3/schemeCategory10)]
-         [:svg {:viewBox (str "0 0 " size " " size)}
-          (map
-           (fn [{:keys [letter frequency]}]
-             [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
-              [:rect {:x      (x 0)
-                      :height (.bandwidth y)
-                      :fill   (color letter)
-                      :width  (x frequency)}]])
-           data)
-          (map
-           (fn [{:keys [letter frequency]}]
-             [:g {:key letter :transform (str "translate(" 0 "," (y letter) ")")}
-              [:text {:x 20
-                      :y (+ (/ (.bandwidth y) 2) 1)
-                      :dominant-baseline "middle"}
-               frequency]
-              [:text.current-fill
-               {:x 0 :y (/ (.bandwidth y) 2) :dominant-baseline "middle"}
-               letter]])
-           data)])))]})
 
 (def pie
   {:title "Pie Chart"
