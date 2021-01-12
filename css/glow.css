@@ -1,0 +1,83 @@
+.syntax pre {
+  background: white;
+}
+
+.syntax pre .definition {
+  color: #cb4b16;
+}
+
+.syntax pre .core-fn {
+  color: #586e75;
+}
+
+.syntax pre .variable {
+  color: #268bd2;
+}
+
+.syntax pre .number {
+  color: #2aa198;
+}
+
+.syntax pre .s-exp {
+  color: #586e75;
+}
+
+.syntax pre .symbol {
+  color: #586e75;
+}
+
+.syntax pre .special-form {
+  color: #859900;
+}
+
+.syntax pre .background {
+  color: white;
+}
+
+.syntax pre .string {
+  color: #2aa198;
+}
+
+.syntax pre .keyword {
+  color: #268bd2;
+}
+
+.syntax pre .macro {
+  color: #859900;
+}
+
+.syntax pre .reader-char {
+  color: #dc322f;
+}
+
+.syntax pre .nil {
+  color: #2aa198;
+}
+
+.syntax pre .comment {
+  color: #586e75;
+}
+
+.syntax pre .repeat {
+  color: #859900;
+}
+
+.syntax pre .regex {
+  color: #dc322f;
+}
+
+.syntax pre .exception {
+  color: #859900;
+}
+
+.syntax pre .boolean {
+  color: #2aa198;
+}
+
+.syntax pre .character {
+  color: #2aa198;
+}
+
+.syntax pre .conditional {
+  color: #859900;
+}
