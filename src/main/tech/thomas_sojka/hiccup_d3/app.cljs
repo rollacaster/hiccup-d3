@@ -563,6 +563,14 @@
   [:div.shadow-lg.border.md:rounded-xl.bg-white.w-full.mb-2.lg:mr-16.md:mb-2.lg:mb-16 {:class "md:w-1/2 lg:w-5/12"}
    children])
 
+(defn chart-container-button [{:keys [type active-tab]} children]
+  [:button.p-5.md:p-6.hover:bg-gray-100.focus:outline-none.focus:ring
+   {:class "w-1/3" :on-click (fn [] (reset! active-tab type))}
+   [:div.flex.items-center.justify-center
+    {:class (if (= @active-tab type) "text-blue-600" "text-gray-600")}
+    [:div.w-4.h-4.mr-1 [icon {:name type}]]
+    children]])
+
 (defn chart-container [{:keys [load]}]
   (let [copy-id (random-uuid)
         data (r/atom nil)]
@@ -638,24 +646,9 @@
                            {:href doc-link :target "_blank" :rel "noopener"} fn]])
                        d3-apis)]]])]
             [:div.flex.divide-x
-             [:button.p-5.md:p-6.hover:bg-gray-100.focus:outline-none.focus:ring
-              {:class "w-1/3" :on-click (fn [] (reset! active-tab :chart))}
-              [:div.flex.items-center.justify-center
-               {:class (if (= @active-tab :chart) "text-blue-300" "text-gray-600")}
-               [:div.w-4.h-4.mr-1 [icon {:name :chart}]]
-               "Chart"]]
-             [:button.p-5.md:p-6.hover:bg-gray-100.focus:outline-none.focus:ring
-              {:class "w-1/3" :on-click (fn [] (reset! active-tab :code))}
-              [:div.flex.items-center.justify-center
-               {:class (if (= @active-tab :code) "text-blue-300" "text-gray-600")}
-               [:div.w-4.h-4.mr-1 [icon {:name :code}]]
-               "Code"]]
-             [:button.p-5.md:p-6.hover:bg-gray-100.focus:outline-none.focus:ring
-              {:class "w-1/3" :on-click (fn [] (reset! active-tab :data))}
-              [:div.flex.items-center.justify-center
-               {:class (if (= @active-tab :data) "text-blue-300" "text-gray-600")}
-               [:div.w-4.h-4.mr-1 [icon {:name :data}]]
-               "Data"]]]]])))))
+             [chart-container-button {:type :chart :active-tab active-tab} "Chart"]
+             [chart-container-button {:type :code :active-tab active-tab} "Code"]
+             [chart-container-button {:type :data :active-tab active-tab} "Data"]]]])))))
 
 (defn app []
   (r/with-let [_ (js/window.addEventListener "resize" (fn [] (reset! screen-size (get-screen-size))))]
